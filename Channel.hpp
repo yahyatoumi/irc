@@ -19,9 +19,10 @@
 
 class Client;
 
-class Channel{
+class Channel
+{
 private:
-    std::vector<Client> chanel_clients;
+    std::vector<Client> channel_clients;
     std::vector<Client> operators;
     std::string name;
     bool invite_only;
@@ -30,9 +31,35 @@ public:
     Channel();
     Channel(std::string &name);
     ~Channel();
-
-    std::string get_name() const;
-    std::vector<Client> getChannelClient() const;
+    std::string get_name() const
+    {
+        return this->name;
+    }
+    std::vector<Client> getCHannelClients() const
+    {
+        return this->channel_clients;
+    }
+    int getChannelClient(const Client &client) const
+    {
+        for (int i = 0; i < this->channel_clients.size(); i++)
+        {
+            if (this->channel_clients[i] == client)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    void addClient(Client &client)
+    {
+        this->channel_clients.push_back(client);
+    }
+    int getNumberOfClients(){
+        return this->channel_clients.size();
+    }
+    void removeAClientFromChannel(int index){
+        this->channel_clients.erase(this->channel_clients.begin() + index);
+    }
 };
 
 #endif
