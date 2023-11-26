@@ -148,7 +148,6 @@ public:
         {
             if (this->clients[i].getEnteredPass() && this->clients[i].getEntredNick())
             {
-
                 std::string channel_name_holder(buff + 5);
                 std::string channel_name = channel_name_holder.substr(0, channel_name_holder.size() - 2);
                 int channel_index = find_channel(channel_name);
@@ -159,7 +158,7 @@ public:
                         std::cout << "foooo" << std::endl;
                         this->channels[channel_index].addClient(this->clients[i]);
                         std::cout << this->clients[i].getnickname() << " is now a member in 1 " << this->channels[channel_index].get_name() << std::endl;
-                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), "username", channel_name, "127.0.0.1");
+                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getnickname(), channel_name, "127.0.0.1");
                         if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                         {
                             exit(1);
@@ -170,12 +169,14 @@ public:
                 }
                 else
                 {
+                    std::cout << this->clients.size() << "pcpcpcpcpcpcpcp\n";
                     Channel channel(channel_name);
                     this->channels.push_back(channel);
                     std::cout << this->clients.size() << std::endl;
                     this->channels[this->channels.size() - 1].addClient(this->clients[i]);
                     std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
                     std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getnickname(), channel_name, "127.0.0.1");
+                    std::cout << rpl;
                     std::cout << "i : " << i << std::endl;
                     send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
                 }
