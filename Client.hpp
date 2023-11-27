@@ -75,13 +75,16 @@ public:
     {
         return this->nickname;
     }
+    std::string getUserName() const{
+        return this->userName;
+    }
     int getFd()
     {
         return this->fd;
     }
     bool operator==(const Client &right) const
     {
-        return this->nickname == right.nickname ? true : false;
+        return (this->nickname == right.nickname || this->fd == right.fd) ? true : false;
     }
 };
 

@@ -70,10 +70,10 @@ public:
         return -1;
     }
 
-    void channel_send_message(Channel &channel, Client &sender, char *message)
+    void channel_send_message(Channel &channel, Client &sender, const char *message)
     {
         std::vector<Client> clients = channel.getCHannelClients();
-        std::cout << 2 << "   " << message << std::endl;
+        std::cout << clients.size() << " sizeeeeeezezezezeze  " << message << std::endl;
         std::cout << "sizeeeeee" << clients.size() << std::endl;
         std::string xxx(message);
         for (int i = 0; i < clients.size(); i++)
@@ -86,7 +86,7 @@ public:
             }
         }
     }
-    void parse(char *buff, int i)
+    void parse(const char *buff, int i)
     {
         if (!std::strncmp(buff, "PASS ", 5))
         {
@@ -144,6 +144,40 @@ public:
                     std::runtime_error("send failed");
             }
         }
+        else if (!std::strncmp(buff, "USER ", 5))
+        {
+            std::string username(buff + 5);
+            int len = 0;
+            while (std::isalpha(username[len]))
+            {
+                len++;
+            }
+            username = username.substr(0, len);
+            std::cout << "now username " << username << std::endl;
+            if (!this->clients[i].getEnteredPass())
+            {
+                std::string rpl = ERR_ALREADYREGISTERED("127.0.0.1", this->clients[i].getnickname());
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+            else if (username.length() == 0)
+            {
+                std::cout << "nickname is now : " << username;
+                std::string rpl = ERR_NEEDMOREPARAMS("127.0.0.1", this->clients[i].getnickname());
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+            else if (this->clients[i].isAuthenticated())
+            {
+                std::string rpl = ERR_ALREADYREGISTERED("127.0.0.1", this->clients[i].getnickname());
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+            else
+            {
+                this->clients[i].setUserName(username);
+            }
+        }
         else if (!std::strncmp(buff, "JOIN #", 6))
         {
             if (this->clients[i].getEnteredPass() && this->clients[i].getEntredNick())
@@ -158,7 +192,7 @@ public:
                         std::cout << "foooo" << std::endl;
                         this->channels[channel_index].addClient(this->clients[i]);
                         std::cout << this->clients[i].getnickname() << " is now a member in 1 " << this->channels[channel_index].get_name() << std::endl;
-                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getnickname(), channel_name, "127.0.0.1");
+                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channel_name, "127.0.0.1");
                         if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                         {
                             exit(1);
@@ -175,7 +209,7 @@ public:
                     std::cout << this->clients.size() << std::endl;
                     this->channels[this->channels.size() - 1].addClient(this->clients[i]);
                     std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
-                    std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getnickname(), channel_name, "127.0.0.1");
+                    std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channel_name, "127.0.0.1");
                     std::cout << rpl;
                     std::cout << "i : " << i << std::endl;
                     send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
@@ -237,6 +271,7 @@ public:
             if (fds[i].revents & POLLIN)
             {
                 char buff[1024];
+                std::string lastBuff;
                 ssize_t bytesRead;
                 bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
                 std::cout << "bytes read " << bytesRead << " fd: " << i << std::endl;
@@ -276,8 +311,18 @@ public:
                 else
                 {
                     buff[bytesRead] = '\0';
-                    std::cout << "Received from client " << i << ": " << buff;
-                    parse(buff, i - 1);
+                    lastBuff = buff;
+                    std::cout << "lastbuff1 " << lastBuff;
+                    while (buff[bytesRead - 1] != '\n')
+                    {
+                        std::cout << "here\n";
+                        bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
+                        buff[bytesRead] = '\0';
+                        lastBuff += buff;
+                        std::cout << "lastbuff2 " << lastBuff;
+                    }
+                    std::cout << "Received from client " << i << ": " << lastBuff.length();
+                    parse(lastBuff.c_str(), i - 1);
                 }
             }
         }
