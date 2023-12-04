@@ -86,20 +86,130 @@ public:
             }
         }
     }
+    void parseMode(std::string &command)
+    {
+        bool plus = true;
+        int i = 0;
+        bool modeI = false;
+        bool modeK = false;
+        bool modeT = false;
+        bool modeL = false;
+        bool modeO = false;
+        std::string channel_name = "";
+        std::vector<std::string> params;
+        std::cout << "comd :" << command << std::endl;
+        while (command[i] == ' ')
+        {
+            i++;
+        }
+        if (command[i] != '#')
+        {
+            std::cout << "target error \n";
+            return;
+        }
+        channel_name += '#';
+        i++;
+        while (std::isalpha(command[i]))
+        {
+            channel_name += command[i];
+            i++;
+        }
+        std::cout << "channel name :" << channel_name << std::endl;
+        while (!std::isalpha(command[i]))
+        {
+            i++;
+        }
+
+        if (command[i - 1] == '-')
+        {
+            plus = false;
+            i++;
+        }
+        while (std::isalpha(command[i]))
+        {
+            if (command[i] != 'i' && command[i] != 'l' && command[i] != 't' && command[i] != 'o' && command[i] != 'k')
+            {
+                std::cout << command[i] << "is not a recognised channel mode." << std::endl;
+            }
+            else if (plus)
+            {
+                if (command[i] == 'i')
+                    modeI = true;
+                else if (command[i] == 'o')
+                    modeO = true;
+                else if (command[i] == 'k')
+                    modeK = true;
+                else if (command[i] == 't')
+                    modeT = true;
+                else
+                    modeL = true;
+            }
+            else if (!plus)
+            {
+                if (command[i] == 'i')
+                    modeI = false;
+                else if (command[i] == 'o')
+                    modeO = true;
+                else if (command[i] == 'k')
+                    modeK = false;
+                else if (command[i] == 't')
+                    modeT = false;
+                else
+                    modeL = false;
+            }
+            i++;
+        }
+
+        while (command[i] == ' ')
+            i++;
+        if (command[i])
+        {
+            std::cout << "YY1" << (int)command[i] << "YY1" << std::endl;
+            params.push_back("");
+            while (std::isalpha(command[i]))
+                params[0] += command[i++];
+        }
+        while (command[i] == ' ')
+            i++;
+        if (command[i])
+        {
+            std::cout << "YY2" << (int)command[i] << "YY2" << std::endl;
+            while (command[i] == ' ')
+                i++;
+            params.push_back("");
+            while (command[i])
+                params[1] += command[i++];
+        }
+        std::cout << "modeI : " << modeI << std::endl;
+        std::cout << "modeO : " << modeO << std::endl;
+        std::cout << "modeK : " << modeK << std::endl;
+        std::cout << "modeT : " << modeT << std::endl;
+        std::cout << "modeL : " << modeL << std::endl;
+        std::cout << params.size() << std::endl;
+        std::cout << "param1 : " << params[0] << std::endl;
+        std::cout << "param0 : " << params[1] << std::endl;
+    }
     void parse(const char *buff, int i)
     {
+        std::cout << "xxxxxxxxxxxxxxx       x xxxxxxxx x x x x\n";
         if (!std::strncmp(buff, "PASS ", 5))
         {
             std::string password(buff + 5);
             if (this->clients[i].isAuthenticated())
             {
-                std::string rpl = ERR_ALREADYREGISTERED("127.0.0.1", this->clients[i].getnickname());
+                std::string rpl = ERR_ALREADYREGISTERED("hostname", this->clients[i].getnickname());
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+            else if (!password.length())
+            {
+                std::string rpl = ERR_NEEDMOREPARAMS("hostname", this->clients[i].getnickname());
                 if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                     std::runtime_error("send failed");
             }
             else if (password.length() == 0 || password.substr(0, password.size() - 2) != this->password)
             {
-                std::string rpl = ERR_PASSWDMISMATCH("127.0.0.1", this->clients[i].getnickname());
+                std::string rpl = ERR_PASSWDMISMATCH("hostname", this->clients[i].getnickname());
                 if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                     std::runtime_error("send failed");
             }
@@ -117,7 +227,7 @@ public:
                 if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                     std::runtime_error("send failed");
             }
-            else if (std::strlen(buff) <= 5)
+            else if (!nickname.length())
             {
                 std::string rpl = ERR_NONICKNAMEGIVEN("127.0.0.1", this->clients[i].getnickname());
                 if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
@@ -178,6 +288,12 @@ public:
                 this->clients[i].setUserName(username);
             }
         }
+        else if (!clients[i].isAuthenticated())
+        {
+            std::string rpl = ERR_NOTREGISTERED("127.0.0.1", this->clients[i].getnickname());
+            if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+        }
         else if (!std::strncmp(buff, "JOIN #", 6))
         {
             if (this->clients[i].getEnteredPass() && this->clients[i].getEntredNick())
@@ -207,6 +323,7 @@ public:
                     Channel channel(channel_name);
                     this->channels.push_back(channel);
                     std::cout << this->clients.size() << std::endl;
+                    this->channels[this->channels.size() - 1].addOperator(this->clients[i]);
                     this->channels[this->channels.size() - 1].addClient(this->clients[i]);
                     std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
                     std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channel_name, "127.0.0.1");
@@ -231,7 +348,38 @@ public:
             std::cout << "glockkkkk " << channel_index << channel_name << std::endl;
             if (channel_index >= 0 && this->channels[channel_index].getChannelClient(clients[i]) >= 0)
             {
+                std::cout << "IS OPERATOOOOOR : " << this->channels[channel_index].isOperator(this->channels[channel_index].getChannelClient(clients[i])) << std::endl;
                 channel_send_message(this->channels[channel_index], clients[i], buff);
+            }
+            else if (channel_index == -1)
+            {
+                std::string rpl = ERR_NOSUCHCHANNEL(channel_name, channel_name, clients[i].getnickname());
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+            else if (channel_index >= 0 && this->channels[channel_index].getChannelClient(clients[i]) == -1)
+            {
+                std::string rpl = ERR_NOTONCHANNEL(channel_name, channel_name);
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+        }
+        else if (!std::strncmp(buff, "MODE", 4))
+        {
+            if (std::strlen(buff) == 6)
+            {
+                std::cout << "target is not entered" << std::endl;
+            }
+            else if (buff[4] == ' ')
+            {
+                std::string restOfCommand(buff + 5);
+                restOfCommand = restOfCommand.substr(0, restOfCommand.length() - 2);
+                std::cout << "restOfCommand : " << restOfCommand << " len : " << restOfCommand.length() << std::endl;
+                parseMode(restOfCommand);
+            }
+            else
+            {
+                std::cout << "error :: command not correct!!" << std::endl;
             }
         }
     }
@@ -271,7 +419,7 @@ public:
             if (fds[i].revents & POLLIN)
             {
                 char buff[1024];
-                std::string lastBuff;
+                memset(buff, 0, 1024);
                 ssize_t bytesRead;
                 bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
                 std::cout << "bytes read " << bytesRead << " fd: " << i << std::endl;
@@ -310,18 +458,19 @@ public:
                 }
                 else
                 {
-                    buff[bytesRead] = '\0';
-                    lastBuff = buff;
-                    std::cout << "lastbuff1 " << lastBuff;
-                    while (buff[bytesRead - 1] != '\n')
+                    std::string lastBuff = buff;
+                    memset(buff, 0, 1024);
+                    std::cout << "lastbuff1 " << lastBuff << "XX" << static_cast<int>(buff[bytesRead - 1]) << "XX";
+                    while (lastBuff[lastBuff.length() - 1] != '\n')
                     {
                         std::cout << "here\n";
                         bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
-                        buff[bytesRead] = '\0';
-                        lastBuff += buff;
+                        std::string holder(buff);
+                        lastBuff += holder;
+                        memset(buff, 0, 1024);
                         std::cout << "lastbuff2 " << lastBuff;
                     }
-                    std::cout << "Received from client " << i << ": " << lastBuff.length();
+                    std::cout << "Received from client " << i << ": " << lastBuff << " " << lastBuff.length() << std::endl;
                     parse(lastBuff.c_str(), i - 1);
                 }
             }

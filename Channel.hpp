@@ -23,9 +23,15 @@ class Channel
 {
 private:
     std::vector<Client> channel_clients;
+    std::vector<Client> invitedClients;
+    std::vector<bool> channelOpArr;
     std::vector<Client> operators;
     std::string name;
-    bool invite_only;
+    int channelUsersLimit;
+    bool modeI;
+    bool modeK;
+    bool modeT;
+    bool modeL;
 
 public:
     Channel();
@@ -59,6 +65,20 @@ public:
     }
     void removeAClientFromChannel(int index){
         this->channel_clients.erase(this->channel_clients.begin() + index);
+    }
+    int addOperator(Client &client)
+    {
+        int clientIndex = getChannelClient(client);
+        std::cout << clientIndex << std::endl;
+        if (clientIndex >= 0 && this->channelOpArr[clientIndex] == true)
+            return -1;
+        this->channelOpArr.push_back(1);
+        return clientIndex;
+    }
+    bool isOperator(int i){
+        if (i < 0)
+            throw std::out_of_range("error: index[-1]");
+        return this->channelOpArr[i];
     }
 };
 
