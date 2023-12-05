@@ -75,10 +75,37 @@ public:
         this->channelOpArr.push_back(1);
         return clientIndex;
     }
-    bool isOperator(int i){
-        if (i < 0)
-            throw std::out_of_range("error: index[-1]");
+    bool isOperator(Client &client){
+        int i = getChannelClient(client);
         return this->channelOpArr[i];
+    }
+    bool getModeI(){
+        return this->modeI;
+    }
+    bool getModeK(){
+        return this->modeK;
+    }
+    bool getModeT(){
+        return this->modeT;
+    }
+    bool getModeL(){
+        return this->modeL;
+    }
+    void setModeI(bool state){
+        this->modeI = state;
+    }
+    void setModeL(bool state){
+        this->modeL = state;
+    }
+    void setModeT(bool state){
+        this->modeT = state;
+    }
+    void setModeK(bool state){
+        this->modeK = state;
+    }
+    void modifOp(int index, int state){
+        // std::cout << "len == " << this->operators
+        this->channelOpArr[index] = state;
     }
 };
 

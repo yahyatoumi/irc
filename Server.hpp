@@ -19,6 +19,7 @@ private:
     std::vector<struct pollfd> fds;
     std::vector<Client> clients;
     std::vector<Channel> channels;
+    std::string hostname;
 
 public:
     Server();
@@ -53,6 +54,8 @@ public:
     {
         for (int i = 0; i < clients.size(); i++)
         {
+            // std::cout << this->clients[i].getnickname() << this->clients[i].getnickname().length() << std::endl;
+            // std::cout << nickname << nickname.length() << std::endl;
             if (this->clients[i].getnickname() == nickname)
             {
                 return i;
@@ -75,18 +78,18 @@ public:
         std::vector<Client> clients = channel.getCHannelClients();
         std::cout << clients.size() << " sizeeeeeezezezezeze  " << message << std::endl;
         std::cout << "sizeeeeee" << clients.size() << std::endl;
-        std::string xxx(message);
+        std::string stringMessage(message);
         for (int i = 0; i < clients.size(); i++)
         {
             std::cout << i << 'x' << std::endl;
             if (clients[i].getFd() != sender.getFd())
             {
                 std::cout << "sent to " << clients[i].getnickname() << std::endl;
-                send(clients[i].getFd(), (":" + sender.getnickname() + " " + xxx).c_str(), (":" + sender.getnickname() + " " + xxx).length(), 0);
+                send(clients[i].getFd(), (":" + sender.getnickname() + " " + stringMessage).c_str(), (":" + sender.getnickname() + " " + stringMessage).length(), 0);
             }
         }
     }
-    void parseMode(std::string &command)
+    void parseMode(std::string &command, int index)
     {
         bool plus = true;
         int i = 0;
@@ -95,26 +98,48 @@ public:
         bool modeT = false;
         bool modeL = false;
         bool modeO = false;
-        std::string channel_name = "";
+        std::string target = "";
         std::vector<std::string> params;
         std::cout << "comd :" << command << std::endl;
         while (command[i] == ' ')
         {
             i++;
         }
-        if (command[i] != '#')
-        {
-            std::cout << "target error \n";
-            return;
-        }
-        channel_name += '#';
+        // if (command[i] != '#')
+        // {
+        //     ERR_NOSUCHNICK
+        //     std::cout << "target error \n";
+        //     return;
+        // }
+        target += command[i];
         i++;
         while (std::isalpha(command[i]))
         {
-            channel_name += command[i];
+            target += command[i];
             i++;
         }
-        std::cout << "channel name :" << channel_name << std::endl;
+        std::cout << "channel name :" << target << std::endl;
+        if (target[0] != '#' || this->find_channel(target) == -1)
+        {
+            std::string rpl = ERR_NOSUCHNICK(this->hostname, target, target);
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+            return;
+        }
+        else if (this->channels[this->find_channel(target)].getChannelClient(this->clients[index]) == -1)
+        {
+            std::string rpl = ERR_NOTONCHANNEL(this->hostname, target);
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+            return;
+        }
+        else if (!this->channels[this->find_channel(target)].isOperator(this->clients[index]))
+        {
+            std::string rpl = ERR_NOTOP(this->hostname, target);
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+            return;
+        }
         while (!std::isalpha(command[i]))
         {
             i++;
@@ -129,6 +154,11 @@ public:
         {
             if (command[i] != 'i' && command[i] != 'l' && command[i] != 't' && command[i] != 'o' && command[i] != 'k')
             {
+                std::cout << "hereooooo\n";
+                std::string rpl = ERR_UMODEUNKNOWNFLAG(this->hostname, this->clients[index].getnickname(), target, command[i]);
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+
                 std::cout << command[i] << "is not a recognised channel mode." << std::endl;
             }
             else if (plus)
@@ -166,7 +196,7 @@ public:
         {
             std::cout << "YY1" << (int)command[i] << "YY1" << std::endl;
             params.push_back("");
-            while (std::isalpha(command[i]))
+            while (command[i] != ' ' && command[i])
                 params[0] += command[i++];
         }
         while (command[i] == ' ')
@@ -177,7 +207,7 @@ public:
             while (command[i] == ' ')
                 i++;
             params.push_back("");
-            while (command[i])
+            while (command[i] && command[i] != ' ')
                 params[1] += command[i++];
         }
         std::cout << "modeI : " << modeI << std::endl;
@@ -186,8 +216,65 @@ public:
         std::cout << "modeT : " << modeT << std::endl;
         std::cout << "modeL : " << modeL << std::endl;
         std::cout << params.size() << std::endl;
-        std::cout << "param1 : " << params[0] << std::endl;
-        std::cout << "param0 : " << params[1] << std::endl;
+        if (params.size())
+            std::cout << "param0 : " << params[0] << std::endl;
+        if (params.size() == 2)
+            std::cout << "param1 : " << params[1] << std::endl;
+        if (plus && modeO && modeL && params.size() != 2)
+        {
+            std::string rpl = ERR_NEEDMOREPARAMS(this->hostname, this->clients[index].getnickname());
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+        }
+        else if (plus && (modeO || modeL) && !params.size())
+        {
+            std::string rpl = ERR_NEEDMOREPARAMS(this->hostname, this->clients[index].getnickname());
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+        }
+        else if (modeO && !params.size())
+        {
+            std::string rpl = ERR_NEEDMOREPARAMS(this->hostname, this->clients[index].getnickname());
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+        }
+        Channel &channel = this->channels[find_channel(target)];
+        std::string username;
+        std::string number;
+        if (params.size() == 2)
+        {
+            username = params[0];
+            number = params[1];
+        }
+        else if (params.size() && modeL){
+            username = "";
+            number = params[0];
+        }
+        else if (params.size() && modeO){
+            username = params[0];
+            number = "";
+        }
+        int clientIndex = channel.getChannelClient(this->clients[getClientIndexByNickname(username)]);
+        std::cout << clientIndex << channel.isOperator(this->clients[index]) << std::endl;
+        if (plus)
+        {
+            if (modeI && !channel.getModeI())
+            {
+                channel.setModeI(true);
+                std::string rpl = RPL_CHANNELMODES(this->hostname, target, this->clients[index].getnickname(), "+i");
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+            if (modeO && clientIndex != -1 && !channel.isOperator(this->clients[getClientIndexByNickname(username)]))
+            {
+                std::cout << "before endddddddd" << clientIndex << std::endl;
+                channel.modifOp(clientIndex, true);
+                std::string rpl = RPL_CHANNELMODES(this->hostname, target, this->clients[index].getnickname(), "+o");
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+            }
+        }
+        std::cout << "endddddddd\n";
     }
     void parse(const char *buff, int i)
     {
@@ -348,7 +435,7 @@ public:
             std::cout << "glockkkkk " << channel_index << channel_name << std::endl;
             if (channel_index >= 0 && this->channels[channel_index].getChannelClient(clients[i]) >= 0)
             {
-                std::cout << "IS OPERATOOOOOR : " << this->channels[channel_index].isOperator(this->channels[channel_index].getChannelClient(clients[i])) << std::endl;
+                std::cout << "IS OPERATOOOOOR : " << this->channels[channel_index].isOperator(this->clients[i]) << std::endl;
                 channel_send_message(this->channels[channel_index], clients[i], buff);
             }
             else if (channel_index == -1)
@@ -375,7 +462,7 @@ public:
                 std::string restOfCommand(buff + 5);
                 restOfCommand = restOfCommand.substr(0, restOfCommand.length() - 2);
                 std::cout << "restOfCommand : " << restOfCommand << " len : " << restOfCommand.length() << std::endl;
-                parseMode(restOfCommand);
+                parseMode(restOfCommand, i);
             }
             else
             {
@@ -494,6 +581,7 @@ public:
     Server(char *port, char *password)
     {
         std::cout << "fofofofof" << std::endl;
+        this->hostname = "hostname";
         this->port = std::atoi(port);
         if (this->port < 0 || this->port > 65535 || std::strlen(port) > 5)
             std::out_of_range("error: port out of range");
