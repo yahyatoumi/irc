@@ -27,16 +27,58 @@ private:
     std::vector<bool> channelOpArr;
     std::vector<Client> operators;
     std::string name;
+    std::string password;
+    std::string topic;
     int channelUsersLimit;
     bool modeI;
     bool modeK;
     bool modeT;
     bool modeL;
+    std::vector<char> modes;
 
 public:
     Channel();
     Channel(std::string &name);
     ~Channel();
+    std::string getModes()
+    {
+        if (!modes.size()){
+            return "";
+        }
+        std::string mds = "+";
+        for (int i = 0; i < this->modes.size(); i++)
+        {
+            mds += this->modes[i];
+        }
+        return mds;
+    }
+    std::string getTopic()
+    {
+        return this->topic;
+    }
+    void setTopic(std::string newTopic)
+    {
+        modeT = true;
+        this->topic = newTopic;
+    }
+    int getUserslimit()
+    {
+        return this->channelUsersLimit;
+    }
+    void setUserslimit(int limit)
+    {
+        this->modeL = true;
+        this->channelUsersLimit = limit;
+    }
+    void setPassword(std::string pass)
+    {
+        this->modeK = true;
+        this->password = pass;
+    }
+    std::string getPassword()
+    {
+        return this->password;
+    }
     std::string get_name() const
     {
         return this->name;
@@ -60,10 +102,12 @@ public:
     {
         this->channel_clients.push_back(client);
     }
-    int getNumberOfClients(){
+    int getNumberOfClients()
+    {
         return this->channel_clients.size();
     }
-    void removeAClientFromChannel(int index){
+    void removeAClientFromChannel(int index)
+    {
         this->channel_clients.erase(this->channel_clients.begin() + index);
     }
     int addOperator(Client &client)
@@ -75,36 +119,61 @@ public:
         this->channelOpArr.push_back(1);
         return clientIndex;
     }
-    bool isOperator(Client &client){
+    bool isOperator(Client &client)
+    {
         int i = getChannelClient(client);
         return this->channelOpArr[i];
     }
-    bool getModeI(){
+    bool getModeI()
+    {
         return this->modeI;
     }
-    bool getModeK(){
+    bool getModeK()
+    {
         return this->modeK;
     }
-    bool getModeT(){
+    bool getModeT()
+    {
         return this->modeT;
     }
-    bool getModeL(){
+    bool getModeL()
+    {
         return this->modeL;
     }
-    void setModeI(bool state){
+    void setModeI(bool state)
+    {
         this->modeI = state;
+        if (std::find(modes.begin(), modes.end(), 'i') == modes.end() && state)
+            modes.push_back('i');
+        else if (!state)
+            modes.erase(std::find(modes.begin(), modes.end(), 'i'));
     }
-    void setModeL(bool state){
+    void setModeL(bool state)
+    {
         this->modeL = state;
+        if (std::find(modes.begin(), modes.end(), 'l') == modes.end() && state)
+            modes.push_back('l');
+        else if (!state)
+            modes.erase(std::find(modes.begin(), modes.end(), 'l'));
     }
-    void setModeT(bool state){
+    void setModeT(bool state)
+    {
         this->modeT = state;
+        if (std::find(modes.begin(), modes.end(), 't') == modes.end() && state)
+            modes.push_back('t');
+        else if (!state)
+            modes.erase(std::find(modes.begin(), modes.end(), 't'));
     }
-    void setModeK(bool state){
+    void setModeK(bool state)
+    {
         this->modeK = state;
+        if (std::find(modes.begin(), modes.end(), 'k') == modes.end() && state)
+            modes.push_back('k');
+        else if (!state)
+            modes.erase(std::find(modes.begin(), modes.end(), 'k'));
     }
-    void modifOp(int index, int state){
-        // std::cout << "len == " << this->operators
+    void modifOp(int index, int state)
+    {
         this->channelOpArr[index] = state;
     }
 };

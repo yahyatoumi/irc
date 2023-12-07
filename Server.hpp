@@ -97,7 +97,7 @@ public:
         int i = 0;
         while (i < modes.size())
         {
-            if ((modes[i] == 'l' && plus) || modes[i] == 'o' || modes[i] == 'k')
+            if ((modes[i] == 'l' && plus) || (modes[i] == 'k' && plus) || modes[i] == 'o')
                 nOfModesNeedsParam++;
             i++;
         }
@@ -110,7 +110,17 @@ public:
     {
         Channel &channel = this->channels[find_channel(channelName)];
 
-        std::cout << modes.size() << modes[0] << std::endl;
+        if (!modes.size())
+        {
+            // display modes;
+            std::string rpl = RPL_CHANNELMODES(this->hostname, channelName, this->clients[index].getnickname(), channel.getModes());
+            std::cout << "sent :" << rpl;
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+            return;
+        }
+        if (modes.size())
+            std::cout << modes.size() << modes[0] << std::endl;
         if (params.size())
             std::cout << params.size() << params[0] << std::endl;
         while (modes.size())
@@ -125,7 +135,47 @@ public:
                 if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                     std::runtime_error("send failed");
                 channel_send_message(channel, clients[index], rpl.c_str());
-                modes.pop_front();
+            }
+            else if (modes[0] == 'k')
+            {
+                channel.setModeK(true);
+                channel.setPassword(params[0]);
+                std::cout << "entred\n";
+                std::string rpl = RPL_MODEIS(channelName, this->clients[index].getnickname(), "+k");
+                std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                std::cout << "sent :" << rpl;
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+                channel_send_message(channel, clients[index], rpl.c_str());
+                params.pop_front();
+            }
+            else if (modes[0] == 't' && !channel.getModeT())
+            {
+                channel.setModeT(true);
+                std::cout << "entred\n";
+                std::string rpl = RPL_MODEIS(channelName, this->clients[index].getnickname(), "+t");
+                std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                std::cout << "sent :" << rpl;
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+                channel_send_message(channel, clients[index], rpl.c_str());
+            }
+            else if (modes[0] == 'l')
+            {
+                if (std::atoi(params[0].c_str()) > 0 && (!channel.getModeL() || channel.getUserslimit() != std::atoi(params[0].c_str())))
+                {
+                    std::cout << "dududududud\n";
+                    channel.setModeL(true);
+                    channel.setUserslimit(std::atoi(params[0].c_str()));
+                    std::cout << "entred\n";
+                    std::string rpl = RPL_MODEISLIMIT(channelName, this->clients[index].getnickname(), "+l", std::to_string(channel.getUserslimit()));
+                    std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                    std::cout << "sent :" << rpl;
+                    if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                        std::runtime_error("send failed");
+                    channel_send_message(channel, clients[index], rpl.c_str());
+                }
+                params.pop_front();
             }
             else if (modes[0] == 'o')
             {
@@ -149,9 +199,91 @@ public:
                         std::runtime_error("send failed");
                     channel_send_message(channel, clients[index], rpl.c_str());
                 }
-                modes.pop_front();
                 params.pop_front();
             }
+            modes.pop_front();
+        }
+    }
+    void removeModes(std::deque<std::string> &params, std::deque<char> &modes, int index, std::string &channelName)
+    {
+        Channel &channel = this->channels[find_channel(channelName)];
+
+        if (modes.size())
+            std::cout << modes.size() << modes[0] << std::endl;
+        if (params.size())
+            std::cout << params.size() << params[0] << std::endl;
+        std::cout << modes.size() << "7777777777arb\n";
+        while (modes.size())
+        {
+            if (modes[0] == 'i' && channel.getModeI())
+            {
+                channel.setModeI(false);
+                std::cout << "entred\n";
+                std::string rpl = RPL_MODEIS(channelName, this->clients[index].getnickname(), "-i");
+                std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                std::cout << "sent :" << rpl;
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+                channel_send_message(channel, clients[index], rpl.c_str());
+            }
+            else if (modes[0] == 'k' && channel.getModeK())
+            {
+                channel.setModeK(false);
+                std::string rpl = RPL_MODEIS(channelName, this->clients[index].getnickname(), "-k");
+                std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                std::cout << "sent :" << rpl;
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+                channel_send_message(channel, clients[index], rpl.c_str());
+            }
+            else if (modes[0] == 't' && channel.getModeT())
+            {
+                channel.setModeT(false);
+                std::cout << "entred\n";
+                std::string rpl = RPL_MODEIS(channelName, this->clients[index].getnickname(), "-t");
+                std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                std::cout << "sent :" << rpl;
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+                channel_send_message(channel, clients[index], rpl.c_str());
+            }
+            else if (modes[0] == 'l' && channel.getModeL())
+            {
+                std::cout << "dududududud\n";
+                channel.setModeL(false);
+                std::cout << "entred\n";
+                std::string rpl = RPL_MODEIS(channelName, this->clients[index].getnickname(), "-l");
+                std::cout << channelName << " " << this->clients[index].getnickname() << std::endl;
+                std::cout << "sent :" << rpl;
+                if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    std::runtime_error("send failed");
+                channel_send_message(channel, clients[index], rpl.c_str());
+            }
+            else if (modes[0] == 'o')
+            {
+                std::cout << "fofo\n";
+                int clientIndexInClients = getClientIndexByNickname(params[0]);
+                int clientIndex = clientIndexInClients >= 0 ? channel.getChannelClient(this->clients[clientIndexInClients]) : 0;
+                if (clientIndexInClients < 0 || clientIndex < 0)
+                {
+                    std::cout << "xxxxxxxxxxxxxxxpppppppp\n";
+                    std::string rpl = ERR_NOSUCHNICK(this->hostname, channelName, params[0]);
+                    if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                        throw std::runtime_error("send failed");
+                }
+                else if (channel.isOperator(this->clients[clientIndexInClients]))
+                {
+                    std::cout << "before endddddddd" << clientIndex << std::endl;
+                    channel.modifOp(clientIndex, false);
+                    std::string rpl = RPL_MODEISOP(channelName, this->clients[index].getnickname(), "-o", params[0]);
+                    std::cout << "sent :" << rpl;
+                    if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                        std::runtime_error("send failed");
+                    channel_send_message(channel, clients[index], rpl.c_str());
+                }
+                params.pop_front();
+            }
+            modes.pop_front();
         }
     }
 
@@ -172,7 +304,6 @@ public:
         {
             i++;
         }
-
         target += command[i];
         i++;
         while (std::isalpha(command[i]))
@@ -202,17 +333,17 @@ public:
                 std::runtime_error("send failed");
             return;
         }
-        while (!std::isalpha(command[i]))
+        while (command[i] && !std::isalpha(command[i]))
         {
             i++;
         }
 
-        if (command[i - 1] == '-')
+        if (command[i - 1] == '-' && command[i])
         {
             plus = false;
-            i++;
         }
-        while (std::isalpha(command[i]))
+        std::cout << "ii2 : " << i << std::endl;
+        while (std::isalpha(command[i]) && command[i])
         {
             if (command[i] != 'i' && command[i] != 'l' && command[i] != 't' && command[i] != 'o' && command[i] != 'k')
             {
@@ -224,38 +355,34 @@ public:
             }
             else
             {
-                if (command[i] == 'i' && !modeI)
+                if (command[i] == 'i')
                 {
-                    modeI = true;
                     modes.push_back('i');
                 }
-                else if (command[i] == 'o' && !modeO)
+                else if (command[i] == 'o')
                 {
-                    modeO = true;
                     modes.push_back('o');
                 }
-                else if (command[i] == 'k' && !modeK)
+                else if (command[i] == 'k')
                 {
-                    modeK = true;
                     modes.push_back('k');
                 }
-                else if (command[i] == 't' && !modeT)
+                else if (command[i] == 't')
                 {
-                    modeT = true;
                     modes.push_back('t');
                 }
-                else if (!modeL && command[i] == 'l')
+                else if (command[i] == 'l')
                 {
-                    modeL = true;
                     modes.push_back('l');
                 }
             }
             i++;
         }
+        std::cout << "ii2 : " << i << std::endl;
 
         while (command[i])
         {
-            while (command[i] == ' ')
+            while (command[i] && command[i] == ' ')
                 i++;
             if (command[i])
             {
@@ -271,6 +398,7 @@ public:
         std::cout << "modeT : " << modeT << std::endl;
         std::cout << "modeL : " << modeL << std::endl;
         std::cout << params.size() << std::endl;
+        std::cout << modes.size() << std::endl;
         int stacki = 0;
         while (stacki < params.size())
         {
@@ -283,6 +411,7 @@ public:
             std::cout << "stack[" << stacki << "] :" << modes[stacki] << std::endl;
             stacki++;
         }
+        std::cout << "fififififififi\n";
         if (!isThereEnoughParams(params.size(), modes, plus))
         {
             std::string rpl = ERR_NEEDMOREPARAMS(this->hostname, this->clients[index].getnickname());
@@ -290,7 +419,10 @@ public:
                 std::runtime_error("send failed");
             return;
         }
-        addModes(params, modes, index, target);
+        if (plus)
+            addModes(params, modes, index, target);
+        else
+            removeModes(params, modes, index, target);
         // Channel &channel = this->channels[find_channel(target)];
         // std::string username;
         // std::string number;
