@@ -29,6 +29,17 @@ private:
     bool enteredUserName;
 
 public:
+    Client(){
+    }
+    // Client(Client &toCopy){
+    //     this->fd = toCopy.fd;
+    //     this->enteredPass = toCopy.enteredPass;
+    //     this->enteredNick = toCopy.enteredNick;
+    //     this->enteredUserName = toCopy.enteredUserName;
+    //     this->password = toCopy.password;
+    //     this->userName = toCopy.userName;
+    //     this->nickname = toCopy.nickname;
+    // }
     Client(int fd) : fd(fd)
     {
         this->enteredPass = false;
@@ -38,6 +49,17 @@ public:
         this->userName = "";
         this->nickname = "";
     }
+    // Client &operator=(const Client &toCopy)
+    // {
+    //     this->fd = toCopy.fd;
+    //     this->enteredPass = toCopy.enteredPass;
+    //     this->enteredNick = toCopy.enteredNick;
+    //     this->enteredUserName = toCopy.enteredUserName;
+    //     this->password = toCopy.password;
+    //     this->userName = toCopy.userName;
+    //     this->nickname = toCopy.nickname;
+    //     return *this;
+    // }
     void setEnteredNick(){
         this->enteredNick = true;
     }

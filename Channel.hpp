@@ -40,9 +40,46 @@ public:
     Channel();
     Channel(std::string &name);
     ~Channel();
+    bool isChannelFull()
+    {
+        if (this->modeL && channel_clients.size() >= channelUsersLimit)
+            return true;
+        return false;
+    }
+    void addInvited(Client &client)
+    {
+        for (int i = 0; i < invitedClients.size(); i++)
+        {
+            if (client == invitedClients[i])
+                return;
+        }
+        this->invitedClients.push_back(client);
+    }
+    void removeInvitation(Client &client)
+    {
+        std::vector<Client>::iterator itr;
+        for (itr = invitedClients.begin(); itr < invitedClients.end(); itr++)
+        {
+            if (client == *itr)
+            {
+                invitedClients.erase(itr);
+                return;
+            }
+        }
+    }
+    bool isInvited(Client &client)
+    {
+        for (int i = 0; i < invitedClients.size(); i++)
+        {
+            if (client == invitedClients[i])
+                return true;
+        }
+        return false;
+    }
     std::string getModes()
     {
-        if (!modes.size()){
+        if (!modes.size())
+        {
             return "";
         }
         std::string mds = "+";
@@ -122,7 +159,10 @@ public:
     bool isOperator(Client &client)
     {
         int i = getChannelClient(client);
-        return this->channelOpArr[i];
+        std::cout << channelOpArr[i] << "babe\n";
+        if (i >= 0)
+            return this->channelOpArr[i];
+        return false;
     }
     bool getModeI()
     {
