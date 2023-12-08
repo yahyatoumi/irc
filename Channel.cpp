@@ -30,4 +30,5 @@ Channel::Channel(std::string &name)
     this->modeK = false;
     this->modeT = false;
     this->modeL = false;
+    this->topic = "";
 }

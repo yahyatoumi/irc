@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include "message.hpp"
 #include <deque>
+#include "Channel.hpp"
 
 class Client;
 class Channel;
@@ -469,6 +470,53 @@ public:
         // }
         // std::cout << "endddddddd\n";
     }
+    void extractChannelsName(std::vector<std::string> &channelsNames, std::vector<std::string> &keys, std::string &params)
+    {
+        int i = 0;
+        while (params[i] && params[i] == ' ')
+            i++;
+        std::string channels = "";
+        while (params[i] && params[i] != ' ')
+        {
+            channels += params[i];
+            i++;
+        }
+        while (params[i] && params[i] == ' ')
+            i++;
+        while (params[i])
+        {
+            std::string tmpKey = "";
+            while (params[i] && params[i] != ' ')
+            {
+                tmpKey += params[i];
+                i++;
+            }
+            if (tmpKey.length())
+            {
+                keys.push_back(tmpKey);
+                std::cout << "key : " << tmpKey << std::endl;
+            }
+            while (params[i] && params[i] == ' ')
+                i++;
+        }
+        i = 0;
+        while (channels[i])
+        {
+            std::string tmpChannels = "";
+            while (channels[i] && channels[i] != ',')
+            {
+                tmpChannels += channels[i];
+                i++;
+            }
+            if (tmpChannels.length())
+            {
+                channelsNames.push_back(tmpChannels);
+                std::cout << "channel : " << tmpChannels << std::endl;
+            }
+            if (channels[i] == ',')
+                i++;
+        }
+    }
     void parse(const char *buff, int i)
     {
         std::cout << "xxxxxxxxxxxxxxx       x xxxxxxxx x x x x\n";
@@ -577,37 +625,43 @@ public:
         {
             if (this->clients[i].getEnteredPass() && this->clients[i].getEntredNick())
             {
-                std::string channel_name(buff + 5);
-                int channel_index = find_channel(channel_name);
-                if (channel_index >= 0)
+                std::vector<std::string> channelsNames;
+                std::vector<std::string> keys;
+                std::string channelsParams(buff + 5);
+                extractChannelsName(channelsNames, keys, channelsParams);
+                for (int j = 0; j < channelsNames.size(); j++)
                 {
-                    if (this->channels[channel_index].getChannelClient(this->clients[i]) == -1)
+                    int channel_index = find_channel(channelsNames[j]);
+                    if (channel_index >= 0)
                     {
-                        std::cout << "foooo" << std::endl;
-                        this->channels[channel_index].addClient(this->clients[i]);
-                        std::cout << this->clients[i].getnickname() << " is now a member in 1 " << this->channels[channel_index].get_name() << std::endl;
-                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channel_name, "127.0.0.1");
-                        if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                        if (this->channels[channel_index].getChannelClient(this->clients[i]) == -1)
                         {
-                            exit(1);
+                            std::cout << "foooo" << std::endl;
+                            this->channels[channel_index].addClient(this->clients[i]);
+                            std::cout << this->clients[i].getnickname() << " is now a member in 1 " << this->channels[channel_index].get_name() << std::endl;
+                            std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], "127.0.0.1");
+                            if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                            {
+                                exit(1);
+                            }
                         }
+                        else
+                            std::cout << "didi not" << std::endl;
                     }
                     else
-                        std::cout << "didi not" << std::endl;
-                }
-                else
-                {
-                    std::cout << this->clients.size() << "pcpcpcpcpcpcpcp\n";
-                    Channel channel(channel_name);
-                    this->channels.push_back(channel);
-                    std::cout << this->clients.size() << std::endl;
-                    this->channels[this->channels.size() - 1].addOperator(this->clients[i]);
-                    this->channels[this->channels.size() - 1].addClient(this->clients[i]);
-                    std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
-                    std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channel_name, "127.0.0.1");
-                    std::cout << rpl;
-                    std::cout << "i : " << i << std::endl;
-                    send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                    {
+                        std::cout << this->clients.size() << "pcpcpcpcpcpcpcp\n";
+                        Channel channel(channelsNames[j]);
+                        this->channels.push_back(channel);
+                        std::cout << this->clients.size() << std::endl;
+                        this->channels[this->channels.size() - 1].addOperator(this->clients[i]);
+                        this->channels[this->channels.size() - 1].addClient(this->clients[i]);
+                        std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
+                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], "127.0.0.1");
+                        std::cout << rpl;
+                        std::cout << "i : " << i << std::endl;
+                        send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                    }
                 }
             }
         }
@@ -707,16 +761,20 @@ public:
                         std::cout << "Client " << i << " disconnected" << std::endl;
                         std::cout << i << std::endl;
                         int size = this->channels.size();
+                        std::cout << "channels size :" << size << std::endl;
                         for (int x = 0; x < size; x++)
                         {
                             int index = this->channels[x].getChannelClient(this->clients[i - 1]);
+                            std::cout << "index : " << index << std::endl;
                             if (index >= 0)
                             {
+                                std::cout << "removed from channel : " << this->channels[x].get_name() << std::endl;
                                 this->channels[x].removeAClientFromChannel(index);
                                 if (!this->channels[x].getNumberOfClients())
                                 {
                                     this->channels.erase(this->channels.begin() + x);
                                     size--;
+                                    x--;
                                 }
                             }
                         }
