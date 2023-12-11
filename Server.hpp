@@ -1211,7 +1211,7 @@ public:
             std::runtime_error("Bind failed xx");
         }
 
-        if (listen(this->sockFD, 10) == 0)
+        if (listen(this->sockFD, SOMAXCONN) == 0)
         {
             std::cout << "Listening on port " << this->port << std::endl;
         }
