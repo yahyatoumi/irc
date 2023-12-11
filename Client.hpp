@@ -19,17 +19,19 @@ class Channel;
 
 class Client
 {
-private:
+protected:
     std::string nickname;
     std::string userName;
     std::string password;
+    std::string ipadress;
     int fd;
     bool enteredPass;
     bool enteredNick;
     bool enteredUserName;
 
 public:
-    Client(){
+    Client()
+    {
     }
     // Client(Client &toCopy){
     //     this->fd = toCopy.fd;
@@ -48,6 +50,7 @@ public:
         this->password = "";
         this->userName = "";
         this->nickname = "";
+        this->ipadress = "";
     }
     // Client &operator=(const Client &toCopy)
     // {
@@ -60,44 +63,64 @@ public:
     //     this->nickname = toCopy.nickname;
     //     return *this;
     // }
-    void setEnteredNick(){
+
+    void setip_address(std::string ip)
+    {
+        this->ipadress = ip;
+    }
+    std::string getip_address()
+    {
+        return (this->ipadress);
+    }
+    void setEnteredNick()
+    {
         this->enteredNick = true;
     }
-    bool getEnteredPass(){
+    bool getEnteredPass()
+    {
         return this->enteredPass;
     }
-    bool getEntredNick(){
+    bool getEntredNick()
+    {
         return this->enteredNick;
     }
-    bool getEntredUserName(){
+    bool getEntredUserName()
+    {
         return enteredUserName;
     }
-    void setEnteredUserName(){
+    void setEnteredUserName()
+    {
         this->enteredUserName = true;
     }
-    void setEnteredPass(){
+    void setEnteredPass()
+    {
         this->enteredPass = true;
     }
-    void setNickName(std::string nickname){
+    void setNickName(std::string nickname)
+    {
         this->nickname = nickname;
         setEnteredNick();
     }
-    void setUserName(std::string userName){
+    void setUserName(std::string userName)
+    {
         this->userName = userName;
         setEnteredUserName();
     }
-    void setPassword(std::string &clientPass){
+    void setPassword(std::string &clientPass)
+    {
         this->password = clientPass;
         setEnteredPass();
     }
-    bool isAuthenticated(){
+    bool isAuthenticated()
+    {
         return (this->enteredPass && this->enteredNick && this->enteredUserName);
     }
     std::string getnickname() const
     {
         return this->nickname;
     }
-    std::string getUserName() const{
+    std::string getUserName() const
+    {
         return this->userName;
     }
     int getFd()
