@@ -29,7 +29,7 @@ private:
     std::string name;
     std::string password;
     std::string topic;
-    int channelUsersLimit;
+    size_t channelUsersLimit;
     bool modeI;
     bool modeK;
     bool modeT;
@@ -48,7 +48,7 @@ public:
     }
     void addInvited(Client &client)
     {
-        for (int i = 0; i < invitedClients.size(); i++)
+        for (size_t i = 0; i < invitedClients.size(); i++)
         {
             if (client == invitedClients[i])
                 return;
@@ -69,7 +69,7 @@ public:
     }
     bool isInvited(Client &client)
     {
-        for (int i = 0; i < invitedClients.size(); i++)
+        for (size_t i = 0; i < invitedClients.size(); i++)
         {
             if (client == invitedClients[i])
                 return true;
@@ -83,7 +83,7 @@ public:
             return "";
         }
         std::string mds = "+";
-        for (int i = 0; i < this->modes.size(); i++)
+        for (size_t i = 0; i < this->modes.size(); i++)
         {
             mds += this->modes[i];
         }
@@ -126,7 +126,7 @@ public:
     }
     int getChannelClient(const Client &client) const
     {
-        for (int i = 0; i < this->channel_clients.size(); i++)
+        for (size_t i = 0; i < this->channel_clients.size(); i++)
         {
             if (this->channel_clients[i] == client)
             {

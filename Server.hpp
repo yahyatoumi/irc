@@ -29,7 +29,7 @@ public:
 
     int getClientIndexByFD(int fd)
     {
-        for (int i = 0; i < clients.size(); i++)
+        for (size_t i = 0; i < clients.size(); i++)
         {
             if (this->clients[i].getFd() == fd)
             {
@@ -43,7 +43,7 @@ public:
         if (nickname.empty() || nickname.size() > 9 || std::isdigit(nickname[0]) || nickname[0] == '#' || nickname[0] == ':')
             return false;
 
-        for (int i = 0; i < nickname.length(); i++)
+        for (size_t i = 0; i < nickname.length(); i++)
         {
             if (!std::isalnum(nickname[i]) && nickname[i] != '_' && nickname[i] != '|' && nickname[i] != '-' && nickname[i] != '^' &&
                 nickname[i] != '[' && nickname[i] != ']' && nickname[i] != '{' && nickname[i] != '}')
@@ -55,7 +55,7 @@ public:
     }
     int getClientIndexByNickname(std::string nickname)
     {
-        for (int i = 0; i < clients.size(); i++)
+        for (size_t i = 0; i < clients.size(); i++)
         {
             // std::cout << this->clients[i].getnickname() << this->clients[i].getnickname().length() << std::endl;
             // std::cout << nickname << nickname.length() << std::endl;
@@ -68,7 +68,7 @@ public:
     }
     int find_channel(std::string &name)
     {
-        for (int i = 0; i < this->channels.size(); i++)
+        for (size_t i = 0; i < this->channels.size(); i++)
         {
             if (this->channels[i].get_name().length() && this->channels[i].get_name() == name)
                 return i;
@@ -82,7 +82,7 @@ public:
         std::cout << clients.size() << " sizeeeeeezezezezeze  " << message << std::endl;
         std::cout << "sizeeeeee" << clients.size() << std::endl;
         std::string stringMessage(message);
-        for (int i = 0; i < clients.size(); i++)
+        for (size_t i = 0; i < clients.size(); i++)
         {
             std::cout << i << 'x' << std::endl;
             if (clients[i].getFd() != sender.getFd())
@@ -96,7 +96,7 @@ public:
     bool isThereEnoughParams(int paramsSize, std::deque<char> &modes, int plus)
     {
         int nOfModesNeedsParam = 0;
-        int i = 0;
+        size_t i = 0;
         while (i < modes.size())
         {
             if ((modes[i] == 'l' && plus) || (modes[i] == 'k' && plus) || modes[i] == 'o')
@@ -401,7 +401,7 @@ public:
         std::cout << "modeL : " << modeL << std::endl;
         std::cout << params.size() << std::endl;
         std::cout << modes.size() << std::endl;
-        int stacki = 0;
+        size_t stacki = 0;
         while (stacki < params.size())
         {
             std::cout << "params[" << stacki << "] :" << params[stacki] << std::endl;
@@ -809,7 +809,7 @@ public:
                 std::vector<std::string> keys;
                 std::string channelsParams(buff + 5);
                 extractChannelsName(channelsNames, keys, channelsParams);
-                for (int j = 0; j < channelsNames.size(); j++)
+                for (size_t j = 0; j < channelsNames.size(); j++)
                 {
                     int channel_index = find_channel(channelsNames[j]);
                     if (channel_index >= 0)
@@ -855,12 +855,12 @@ public:
                             std::string names = "";
                             std::vector<Client> channelClients = this->channels[this->find_channel(channelsNames[j])].getCHannelClients();
 
-                            for (int o = 0; o < channelClients.size(); o++)
+                            for (size_t o = 0; o < channelClients.size(); o++)
                             {
                                 names = names + "@" + channelClients[o].getnickname() + "\r\n";
                                 std::cout << "00000000000000" << names << std::endl;
                             }
-                            for (int o = 0; o < channelClients.size(); o++)
+                            for (size_t o = 0; o < channelClients.size(); o++)
                             {
                                 rpl = RPL_JOIN(this->clients[o].getnickname(), this->clients[o].getUserName(), channelsNames[j], this->clients[o].getip_address());
                                 send(this->clients[o].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
@@ -880,7 +880,6 @@ public:
                     }
                     else
                     {
-                        std::cout << this->clients.size() << "pcpcpcpcpcpcpcp\n";
                         Channel channel(channelsNames[j]);
                         this->channels.push_back(channel);
                         std::cout << this->clients.size() << std::endl;
@@ -888,16 +887,14 @@ public:
                         this->channels[this->channels.size() - 1].addClient(this->clients[i]);
                         std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
                         std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], this->clients[i].getip_address());
-                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
-                        rpl = ":" + channelsNames[j] + " MODE " + this->clients[i].getnickname() + " +ns \r\n";
+                        // send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                        //   rpl = ":" + channelsNames[j] + " MODE " + this->clients[i].getnickname() + " +ns \r\n";
                         std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
                         send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
                         // rpl_names
                         rpl = ":" + clients[i].getip_address() + " 353 " + clients[i].getnickname() + " = " + channelsNames[j] + " :@" + clients[i].getnickname() + " \r\n";
                         send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
                         rpl = RPL_ENDOFNAMES(this->clients[i].getip_address(), this->clients[i].getnickname(), channelsNames[j]);
-                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
-                        std::cout << "sent2 : " << rpl;
                     }
                 }
             }
@@ -979,7 +976,7 @@ public:
         {
             std::vector<std::string> kickParams;
             extractKickParams(kickParams, buff + 5);
-            for (int j = 0; j < kickParams.size(); j++)
+            for (size_t j = 0; j < kickParams.size(); j++)
             {
                 std::cout << "param[" << j << "] : " << kickParams[j] << std::endl;
             }
@@ -1023,7 +1020,7 @@ public:
         {
             std::vector<std::string> topicParams;
             extractKickParams(topicParams, buff + 5);
-            for (int j = 0; j < topicParams.size(); j++)
+            for (size_t j = 0; j < topicParams.size(); j++)
             {
                 std::cout << "param[" << j << "] : " << topicParams[j] << std::endl;
             }
@@ -1205,6 +1202,7 @@ public:
         if (bind(this->sockFD, (struct sockaddr *)address, sizeof *address) == 0)
         {
             std::cout << "Socket bound" << std::endl;
+            exit(1);
         }
         else
         {
