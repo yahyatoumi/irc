@@ -9,7 +9,7 @@
 
 NAME = ircserv
 NAMB = irc_bot
-src = neww.o Channel.o 
+src = neww.o Channel.o Server.o
 srcb =  Bot.o 
 CC = c++
 CXXFLAGS =  -Wall -Wextra -Werror -std=c++98 
