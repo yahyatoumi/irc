@@ -1,4 +1,4 @@
-#include <iostream>
+`#include <iostream>
 #include "Client.hpp"
 #include <vector>
 #include <unistd.h>
@@ -328,13 +328,7 @@ public:
                 std::runtime_error("send failed");
             return;
         }
-        else if (!this->channels[this->find_channel(target)].isOperator(this->clients[index]))
-        {
-            std::string rpl = ERR_NOTOP(this->hostname, target);
-            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
-                std::runtime_error("send failed");
-            return;
-        }
+        
         while (command[i] && !std::isalpha(command[i]))
         {
             i++;
@@ -343,6 +337,20 @@ public:
         if (command[i - 1] == '-' && command[i])
         {
             plus = false;
+        }
+        else if (!command[i]){
+            std::string rpl = RPL_CHANNELMODES(this->hostname, target, this->clients[index].getnickname(), this->channels[this->find_channel(target)].getModes());
+            std::cout << "sent :" << rpl;
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+            return ;
+        }
+        else if (!this->channels[this->find_channel(target)].isOperator(this->clients[index]))
+        {
+            std::string rpl = ERR_NOTOP(this->hostname, target);
+            if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                std::runtime_error("send failed");
+            return;
         }
         std::cout << "ii2 : " << i << std::endl;
         while (std::isalpha(command[i]) && command[i])
@@ -813,6 +821,7 @@ public:
                 std::vector<std::string> keys;
                 std::string channelsParams(buff + 5);
                 extractChannelsName(channelsNames, keys, channelsParams);
+                std::cout << "channelsnames sizse : " << channelsNames.size() << std::endl;
                 for (size_t j = 0; j < channelsNames.size(); j++)
                 {
                     int channel_index = find_channel(channelsNames[j]);
@@ -861,21 +870,31 @@ public:
 
                             for (size_t o = 0; o < channelClients.size(); o++)
                             {
-                                names = names + "@" + channelClients[o].getnickname() + "\r\n";
-                                std::cout << "00000000000000" << names << std::endl;
+                                if (channels[channel_index].isOperator(channelClients[o]))
+                                    names += "@";
+                                names += channelClients[o].getnickname() + " ";
                             }
                             for (size_t o = 0; o < channelClients.size(); o++)
                             {
-                                rpl = RPL_JOIN(this->clients[o].getnickname(), this->clients[o].getUserName(), channelsNames[j], this->clients[o].getip_address());
-                                send(this->clients[o].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
-                                rpl = ":" + channelsNames[j] + " MODE " + this->clients[o].getnickname() + " +ns \r\n";
-                                send(this->clients[o].getFd(), rpl.c_str(), rpl.size(), 0);
-                                // rpl_names
-                                rpl = ":" + clients[i].getip_address() + " 353 " + clients[i].getnickname() + " = " + channelsNames[j] + " :" + names + " \r\n";
-                                send(this->clients[o].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
-                                rpl = RPL_ENDOFNAMES(this->clients[i].getip_address(), this->clients[i].getnickname(), channelsNames[j]);
-                                send(this->clients[o].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                                rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], this->clients[i].getip_address());
+                                send(channelClients[o].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                                std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
                             }
+                            rpl = RPL_NAMREPLY(this->clients[i].getip_address(), names, channelsNames[j], this->clients[i].getnickname());
+                            send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                            std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
+                            rpl = RPL_ENDOFNAMES(this->clients[i].getip_address(), this->clients[i].getnickname(), channelsNames[j]);
+                            send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                            std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
+                            this->channels[channel_index].getModes();
+                            std::cout << "modes:" << this->channels[channel_index].getModes() << "channel :" << channelsNames[j] << std::endl;
+                            // rpl = RPL_CHANNELMODES(this->clients[i].getip_address(), channelsNames[j], this->clients[i].getnickname(), this->channels[channel_index].getModes());
+                            // send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                            // std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
+                            time_t timeNow = time(&timeNow);
+                            rpl = RPL_CREATIONTIME(this->clients[i].getip_address(), channelsNames[j], this->clients[i].getnickname(), std::to_string(timeNow));
+                            send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                            std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
                         }
                         else
                             std::cout << "didi not" << std::endl;
@@ -891,8 +910,8 @@ public:
                         this->channels[this->channels.size() - 1].addClient(this->clients[i]);
                         std::cout << this->clients[i].getnickname() << " is now a member in 2 " << channel.get_name() << std::endl;
                         std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], this->clients[i].getip_address());
-                        // send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
-                        //   rpl = ":" + channelsNames[j] + " MODE " + this->clients[i].getnickname() + " +ns \r\n";
+                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                        rpl = ":" + this->clients[i].getnickname() + " MODE " + channelsNames[j] + " +ns \r\n";
                         std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << rpl << std::endl;
                         send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
                         // rpl_names
@@ -1202,13 +1221,12 @@ public:
         if (bind(this->sockFD, (struct sockaddr *)address, sizeof *address) == 0)
         {
             std::cout << "Socket bound" << std::endl;
-            // exit(1);
         }
         else
         {
             close(this->sockFD);
             delete address;
-            std::runtime_error("Bind failed xx");
+            throw std::runtime_error("Bind failed xx");
         }
 
         if (listen(this->sockFD, SOMAXCONN) == 0)

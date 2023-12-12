@@ -78,11 +78,13 @@ public:
     }
     std::string getModes()
     {
+        std::cout << "size == " << modes.size() << std::endl;
         if (!modes.size())
         {
-            return "";
+            std::cout << "returned here\n";
+            return "+ns";
         }
-        std::string mds = "+";
+        std::string mds = "+ns";
         for (size_t i = 0; i < this->modes.size(); i++)
         {
             mds += this->modes[i];
