@@ -13,7 +13,6 @@ Bot::Bot(int port) : Client(0)
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
     serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    std::cout << "<<<<" << port << this->fd << std::endl;
     if (!connect(this->fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)))
         std::cout << "conected" << std::endl;
     const char *message = "bot\r\n";
@@ -73,6 +72,13 @@ Bot::Bot(int port) : Client(0)
             rpl_msg = "PRIVMSG " + name + " :Did you hear about the mathematician who’s afraid of negative numbers? 🃏 \r\n";
             send(this->fd, rpl_msg.c_str(), rpl_msg.size(), 0);
         }
+        else if (!strncmp(msg.c_str(), "my ip", 5) || !strncmp(msg.c_str(), "ip", 2))
+        {
+            pos = comand.find('@');
+            std::string ip = comand.substr(pos + 1, 10);
+            rpl_msg = "PRIVMSG " + name + " :ure ip is [ " + ip + "]📡 \r\n";
+            send(this->fd, rpl_msg.c_str(), rpl_msg.size(), 0);
+        }
     }
 }
 
@@ -80,7 +86,7 @@ int main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        std::cout << "[./bot] [port]" << std::endl;
+        std::cout << "[./irc_bot] [port]" << std::endl;
         return (10);
     }
     Bot bot(std::atoi(argv[1]));

@@ -795,8 +795,12 @@ public:
                     {
                         this->channels[find_channel(params[1])].addInvited(this->clients[this->getClientIndexByNickname(params[0])]);
                         std::string rpl = RPL_INVITING(this->hostname, this->clients[i].getnickname(), params[0], params[1]);
-                        if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
-                            throw std::runtime_error("send failed");
+                        send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                        rpl = RPL_INVITE(this->clients[i].getnickname(), this->clients[i].getUserName(), this->clients[i].getip_address(), params[0], params[1]);
+                        for (std::vector<Client>::iterator it = this->clients.begin(); it != this->clients.end(); it++)
+                            if (it->getnickname() == params[0])
+                                send(it->getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0);
+                        std::cout << "//////////////////// " << rpl << std::endl;
                     }
                 }
             }
@@ -1045,12 +1049,11 @@ public:
             else if (topicParams.size() == 2)
             {
                 this->channels[find_channel(topicParams[0])].setTopic(topicParams[1]);
-                std::string rpl = RPL_TOPIC(this->hostname, this->clients[i].getnickname(), topicParams[0], this->channels[find_channel(topicParams[0])].getTopic(), this->clients[i].getnickname());
+                std::string rpl = RPL_SETTOPIC(this->clients[i].getnickname(), this->clients[i].getip_address(), topicParams[0], topicParams[1]);
                 channel_send_message(this->channels[find_channel(topicParams[0])], this->clients[i], rpl.c_str());
                 if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                     throw std::runtime_error("send failed");
                 std::cout << "herrororororo\n";
-                // this->channels[find_channel(kickParams[0])].removeAClientFromChannel(this->getClientIndexByNickname(kickParams[1]));
             }
             else
             {
@@ -1062,15 +1065,13 @@ public:
             }
         }
     }
-    struct sockaddr_in *createIPv4Address(const char *ip, int port)
+    struct sockaddr_in *createIPv4Address(int port)
     {
         struct sockaddr_in *address = new sockaddr_in();
         address->sin_port = htons(port);
         address->sin_family = AF_INET;
-        if (std::strlen(ip) == 0)
-            address->sin_addr.s_addr = INADDR_ANY;
-        else
-            inet_pton(AF_INET, ip, &address->sin_addr.s_addr);
+        address->sin_addr.s_addr = INADDR_ANY;
+
         return address;
     }
     void createNewClienFD()
@@ -1190,19 +1191,18 @@ public:
         if (this->sockFD < 0)
             std::runtime_error("Failed to create socket");
 
-        if (setsockopt(this->sockFD, SOL_SOCKET, SO_REUSEADDR,
-                       (char *)&on, sizeof(on)) < 0)
+        if (setsockopt(this->sockFD, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
         {
             close(this->sockFD);
             std::runtime_error("setsockopt() failed");
         }
 
-        struct sockaddr_in *address = createIPv4Address("", this->port);
+        struct sockaddr_in *address = createIPv4Address(this->port);
 
         if (bind(this->sockFD, (struct sockaddr *)address, sizeof *address) == 0)
         {
             std::cout << "Socket bound" << std::endl;
-            exit(1);
+            // exit(1);
         }
         else
         {
