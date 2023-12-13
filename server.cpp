@@ -320,7 +320,8 @@ void Server::parseMode(std::string &command, int index)
     }
     if (!isThereEnoughParams(params.size(), modes, plus))
     {
-        std::string rpl = ERR_NEEDMOREPARAMS(this->clients[i].getip_address(), this->clients[index].getnickname());
+        std::string rpl = ERR_NEEDMOREPARAMS(this->clients[index].getnickname(), this->clients[i].getip_address());
+        std::cout << "sent : " << rpl << std::endl;
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
@@ -467,9 +468,21 @@ void Server::extractKickParams(std::vector<std::string> &kickParams, const char 
     }
 }
 
+std::string extractCommand(const char *buff){
+    int i = 0;
+    std::string cmd = "";
+    while (buff[i] && buff[i] != ' '){
+        cmd += buff[i];
+        i++;
+    }
+    return (cmd);
+}
+
 void Server::parse(const char *buff, int i)
 {
-    if (!strncmp(buff, "bot", 3))
+    std::string cmd = extractCommand(buff);
+    std::cout << "command == " << cmd << std::endl;
+    if (cmd == "bot")
     {
         this->clients[i].setNickName("bot");
         this->clients[i].setUserName("bot");
@@ -477,31 +490,31 @@ void Server::parse(const char *buff, int i)
         this->clients[i].setEnteredUserName();
         this->clients[i].setEnteredPass();
     }
-    if (!std::strncmp(buff, "PASS ", 5))
+    if (cmd == "PASS")
     {
         std::string password(buff + 5);
         if (this->clients[i].isAuthenticated())
         {
-            std::string rpl = ERR_ALREADYREGISTERED("hostname", this->clients[i].getnickname());
+            std::string rpl = ERR_ALREADYREGISTERED(this->clients[i].getip_address(), this->clients[i].getnickname());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
         else if (!password.length())
         {
-            std::string rpl = ERR_NEEDMOREPARAMS("hostname", this->clients[i].getnickname());
+            std::string rpl = ERR_NEEDMOREPARAMS(this->clients[i].getip_address(), this->clients[i].getnickname());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
         else if (password.length() == 0 || password != this->password)
         {
-            std::string rpl = ERR_PASSWDMISMATCH("hostname", this->clients[i].getnickname());
+            std::string rpl = ERR_PASSWDMISMATCH(this->clients[i].getip_address(), this->clients[i].getnickname());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
         else
             this->clients[i].setPassword(password);
     }
-    else if (!std::strncmp(buff, "NICK ", 5))
+    else if (cmd == "NICK")
     {
         std::string nickname(buff + 5);
         if (!this->clients[i].getEnteredPass())
@@ -536,7 +549,7 @@ void Server::parse(const char *buff, int i)
                 throw std::runtime_error("send failed");
         }
     }
-    else if (!std::strncmp(buff, "USER ", 5))
+    else if (cmd == "USER")
     {
         std::string username(buff + 5);
         int len = 0;
@@ -583,7 +596,7 @@ void Server::parse(const char *buff, int i)
         if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
     }
-    else if (!std::strncmp(buff, "INVITE", 6))
+    else if (cmd == "INVITE")
     {
         if (this->clients[i].getEnteredPass() && this->clients[i].getEntredNick())
         {
@@ -593,7 +606,7 @@ void Server::parse(const char *buff, int i)
             extractInviteParams(params, paramsString);
             if (params.size() < 2)
             {
-                std::string rpl = ERR_NEEDMOREPARAMS("hostname", this->clients[i].getnickname());
+                std::string rpl = ERR_NEEDMOREPARAMS(this->clients[i].getip_address(), this->clients[i].getnickname());
                 if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                     throw std::runtime_error("send failed");
             }
@@ -644,7 +657,7 @@ void Server::parse(const char *buff, int i)
             }
         }
     }
-    else if (!std::strncmp(buff, "JOIN #", 6))
+    else if (cmd == "JOIN")
     {
         if (this->clients[i].getEnteredPass() && this->clients[i].getEntredNick())
         {
@@ -736,7 +749,6 @@ void Server::parse(const char *buff, int i)
             }
         }
     }
-
     else if (!std::strncmp(buff, "PRIVMSG #", 9))
     {
         char channel_holder[std::strlen(buff + 9)];
@@ -767,7 +779,7 @@ void Server::parse(const char *buff, int i)
         }
     }
 
-    else if (!strncmp(buff, "PRIVMSG", 7))
+    else if (cmd == "PRIVMSG")
     {
         std::string comand = buff + 8;
         size_t pos = comand.find(' ');
@@ -790,7 +802,7 @@ void Server::parse(const char *buff, int i)
             }
         }
     }
-    else if (!std::strncmp(buff, "MODE", 4))
+    else if (cmd == "MODE")
     {
         if (std::strlen(buff) == 4)
         {
@@ -805,7 +817,7 @@ void Server::parse(const char *buff, int i)
             parseMode(restOfCommand, i);
         }
     }
-    else if (!std::strncmp(buff, "KICK ", 5))
+    else if (cmd == "KICK")
     {
         std::vector<std::string> kickParams;
         extractKickParams(kickParams, buff + 5);
@@ -815,7 +827,7 @@ void Server::parse(const char *buff, int i)
         }
         if (kickParams.size() < 2)
         {
-            std::string rpl = ERR_NEEDMOREPARAMS("hostname", this->clients[i].getnickname());
+            std::string rpl = ERR_NEEDMOREPARAMS(this->clients[i].getip_address(), this->clients[i].getnickname());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
@@ -849,7 +861,7 @@ void Server::parse(const char *buff, int i)
             this->channels[find_channel(kickParams[0])].removeAClientFromChannel(this->getClientIndexByNickname(kickParams[1]));
         }
     }
-    else if (!std::strncmp(buff, "TOPIC  ", 6))
+    else if (cmd == "TOPIC")
     {
         std::vector<std::string> topicParams;
         extractKickParams(topicParams, buff + 5);
@@ -859,7 +871,7 @@ void Server::parse(const char *buff, int i)
         }
         if (topicParams.size() < 1)
         {
-            std::string rpl = ERR_NEEDMOREPARAMS("hostname", this->clients[i].getnickname());
+            std::string rpl = ERR_NEEDMOREPARAMS(this->clients[i].getip_address(), this->clients[i].getnickname());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
@@ -887,11 +899,17 @@ void Server::parse(const char *buff, int i)
         else
         {
             std::string rpl = RPL_TOPICDISPLAY(this->clients[i].getip_address(), this->clients[i].getnickname(), topicParams[0], this->channels[find_channel(topicParams[0])].getTopic());
-            // channel_send_message(this->channels[find_channel(kickParams[1])], this->clients[i], rpl.c_str());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
             std::cout << "herrororororo\n";
         }
+    }
+    else if (cmd != "PONG") {
+        std::string rpl = ERR_UNKNOWNCOMMAND(this->clients[i].getip_address(), this->clients[i].getnickname(), cmd);
+            if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                throw std::runtime_error("send failed");
+            std::cout << "herrororororo\n";
+                
     }
 }
 
