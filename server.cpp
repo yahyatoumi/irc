@@ -240,18 +240,16 @@ void Server::parseMode(std::string &command, int index)
     }
     std::string target = allParams[0];
     allParams.pop_front();
-    
-
     if (target[0] != '#' || this->find_channel(target) == -1)
     {
-        std::string rpl = ERR_NOSUCHNICK(this->clients[i].getip_address(), target, target);
+        std::string rpl = ERR_NOSUCHNICK(this->clients[index].getip_address(), target, target);
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
     }
     else if (this->channels[this->find_channel(target)].getChannelClient(this->clients[index]) == -1)
     {
-        std::string rpl = ERR_NOTONCHANNEL(this->clients[i].getip_address(), target);
+        std::string rpl = ERR_NOTONCHANNEL(this->clients[index].getip_address(), target);
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
@@ -259,7 +257,7 @@ void Server::parseMode(std::string &command, int index)
 
     if (!allParams.size())
     {
-        std::string rpl = RPL_CHANNELMODES(this->clients[i].getip_address(), target, this->clients[index].getnickname(), this->channels[this->find_channel(target)].getModes());
+        std::string rpl = RPL_CHANNELMODES(this->clients[index].getip_address(), target, this->clients[index].getnickname(), this->channels[this->find_channel(target)].getModes());
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
@@ -277,7 +275,7 @@ void Server::parseMode(std::string &command, int index)
     }
     if (!this->channels[this->find_channel(target)].isOperator(this->clients[index]))
     {
-        std::string rpl = ERR_NOTOP(this->clients[i].getip_address(), target);
+        std::string rpl = ERR_NOTOP(this->clients[index].getip_address(), target);
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
@@ -286,7 +284,7 @@ void Server::parseMode(std::string &command, int index)
     {
         if (modesString[i] != 'i' && modesString[i] != 'l' && modesString[i] != 't' && modesString[i] != 'o' && modesString[i] != 'k')
         {
-            std::string rpl = ERR_UNKNOWNMODE(this->clients[i].getip_address(), this->clients[index].getnickname(), target, modesString[i]);
+            std::string rpl = ERR_UNKNOWNMODE(this->clients[index].getip_address(), this->clients[index].getnickname(), target, modesString[i]);
             if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
@@ -317,7 +315,7 @@ void Server::parseMode(std::string &command, int index)
     }
     if (!isThereEnoughParams(allParams.size(), modes, plus))
     {
-        std::string rpl = ERR_NEEDMOREPARAMS(this->clients[index].getnickname(), this->clients[i].getip_address());
+        std::string rpl = ERR_NEEDMOREPARAMS(this->clients[index].getnickname(), this->clients[index].getip_address());
         std::cout << "sent : " << rpl << std::endl;
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
