@@ -217,24 +217,31 @@ void Server::removeModes(std::deque<std::string> &params, std::deque<char> &mode
     }
 }
 
+std::deque<std::string> extractModeParams(std::string &command){
+    std::deque<std::string> prms;
+    char *holder = const_cast<char *>(command.c_str());
+    char *token = strtok(holder, " ");
+    while (token){
+        std::cout << "token : " << token << std::endl;
+        prms.push_back(token);
+        token = strtok(nullptr, " ");
+    }
+    return prms;
+}
+
 void Server::parseMode(std::string &command, int index)
 {
     bool plus = true;
     int i = 0;
-    std::string target = "";
-    std::deque<std::string> params;
-    std::deque<char> modes;
-    while (command[i] == ' ')
-    {
+    std::deque<std::string> allParams = extractModeParams(command);
+    while ((unsigned long)i < allParams.size()){
+        std::cout << "token [" << i << "] : " << allParams[i] << std::endl;
         i++;
     }
-    target += command[i];
-    i++;
-    while (command[i] && command[i] != ' ')
-    {
-        target += command[i];
-        i++;
-    }
+    std::string target = allParams[0];
+    allParams.pop_front();
+    
+
     if (target[0] != '#' || this->find_channel(target) == -1)
     {
         std::string rpl = ERR_NOSUCHNICK(this->clients[i].getip_address(), target, target);
@@ -250,75 +257,65 @@ void Server::parseMode(std::string &command, int index)
         return;
     }
 
-    while (command[i] && !std::isalpha(command[i]))
-    {
-        i++;
-    }
-
-    if (command[i - 1] == '-' && command[i])
-    {
-        plus = false;
-    }
-    if (!command[i])
+    if (!allParams.size())
     {
         std::string rpl = RPL_CHANNELMODES(this->clients[i].getip_address(), target, this->clients[index].getnickname(), this->channels[this->find_channel(target)].getModes());
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
     }
-    else if (!this->channels[this->find_channel(target)].isOperator(this->clients[index]))
+    std::string modesString = allParams[0];
+    std::deque<char> modes;
+    allParams.pop_front();
+    i = 0;
+    while ((unsigned long)i < modesString.length() && !std::isalpha(modesString[i])){
+        if (modesString[i] == '-')
+            plus = false;
+        if (modesString[i] == '+')
+            plus = true;
+        i++;
+    }
+    if (!this->channels[this->find_channel(target)].isOperator(this->clients[index]))
     {
         std::string rpl = ERR_NOTOP(this->clients[i].getip_address(), target);
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
             throw std::runtime_error("send failed");
         return;
     }
-    while (std::isalpha(command[i]) && command[i])
+    while (std::isalpha(modesString[i]) && modesString[i])
     {
-        if (command[i] != 'i' && command[i] != 'l' && command[i] != 't' && command[i] != 'o' && command[i] != 'k')
+        if (modesString[i] != 'i' && modesString[i] != 'l' && modesString[i] != 't' && modesString[i] != 'o' && modesString[i] != 'k')
         {
-            std::string rpl = ERR_UNKNOWNMODE(this->clients[i].getip_address(), this->clients[index].getnickname(), target, command[i]);
+            std::string rpl = ERR_UNKNOWNMODE(this->clients[i].getip_address(), this->clients[index].getnickname(), target, modesString[i]);
             if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
         else
         {
-            if (command[i] == 'i')
+            if (modesString[i] == 'i')
             {
                 modes.push_back('i');
             }
-            else if (command[i] == 'o')
+            else if (modesString[i] == 'o')
             {
                 modes.push_back('o');
             }
-            else if (command[i] == 'k')
+            else if (modesString[i] == 'k')
             {
                 modes.push_back('k');
             }
-            else if (command[i] == 't')
+            else if (modesString[i] == 't')
             {
                 modes.push_back('t');
             }
-            else if (command[i] == 'l')
+            else if (modesString[i] == 'l')
             {
                 modes.push_back('l');
             }
         }
         i++;
     }
-
-    while (command[i])
-    {
-        while (command[i] && command[i] == ' ')
-            i++;
-        if (command[i])
-        {
-            params.push_back("");
-            while (command[i] != ' ' && command[i])
-                params[params.size() - 1] += command[i++];
-        }
-    }
-    if (!isThereEnoughParams(params.size(), modes, plus))
+    if (!isThereEnoughParams(allParams.size(), modes, plus))
     {
         std::string rpl = ERR_NEEDMOREPARAMS(this->clients[index].getnickname(), this->clients[i].getip_address());
         std::cout << "sent : " << rpl << std::endl;
@@ -327,9 +324,9 @@ void Server::parseMode(std::string &command, int index)
         return;
     }
     if (plus)
-        addModes(params, modes, index, target);
+        addModes(allParams, modes, index, target);
     else
-        removeModes(params, modes, index, target);
+        removeModes(allParams, modes, index, target);
 }
 
 void Server::extractChannelsName(std::vector<std::string> &channelsNames, std::vector<std::string> &keys, std::string &params)
@@ -858,7 +855,7 @@ void Server::parse(const char *buff, int i)
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
             std::cout << "herrororororo\n";
-            this->channels[find_channel(kickParams[0])].removeAClientFromChannel(this->getClientIndexByNickname(kickParams[1]));
+            this->channels[find_channel(kickParams[0])].removeAClientFromChannel(this->channels[find_channel(kickParams[0])].getChannelClient(this->clients[this->getClientIndexByNickname(kickParams[1])]));
         }
     }
     else if (cmd == "TOPIC")
