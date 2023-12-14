@@ -259,7 +259,7 @@ void Server::parseMode(std::string &command, int index)
     {
         plus = false;
     }
-    else if (!command[i])
+    if (!command[i])
     {
         std::string rpl = RPL_CHANNELMODES(this->clients[i].getip_address(), target, this->clients[index].getnickname(), this->channels[this->find_channel(target)].getModes());
         if (send(this->clients[index].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
@@ -881,7 +881,7 @@ void Server::parse(const char *buff, int i)
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
-        else if (!this->channels[find_channel(topicParams[0])].isOperator(this->clients[i]) && topicParams.size() == 2)
+        else if (!this->channels[find_channel(topicParams[0])].isOperator(this->clients[i]) && topicParams.size() == 2 && !this->channels[find_channel(topicParams[0])].getModeT())
         {
             std::string rpl = ERR_NOTOP(this->clients[i].getip_address(), topicParams[0]);
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)

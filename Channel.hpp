@@ -188,7 +188,13 @@ public:
         if (std::find(modes.begin(), modes.end(), 'i') == modes.end() && state)
             modes.push_back('i');
         else if (!state)
-            modes.erase(std::find(modes.begin(), modes.end(), 'i'));
+        {
+            std::vector<char>::iterator tmp = std::find(modes.begin(), modes.end(), 'i');
+            if (tmp != modes.end())
+            {
+                modes.erase(tmp);
+            }
+        }
     }
     void setModeL(bool state)
     {
@@ -196,7 +202,13 @@ public:
         if (std::find(modes.begin(), modes.end(), 'l') == modes.end() && state)
             modes.push_back('l');
         else if (!state)
-            modes.erase(std::find(modes.begin(), modes.end(), 'l'));
+        {
+            std::vector<char>::iterator tmp = std::find(modes.begin(), modes.end(), 'l');
+            if (tmp != modes.end())
+            {
+                modes.erase(tmp);
+            }
+        }
     }
     void setModeT(bool state)
     {
@@ -204,7 +216,13 @@ public:
         if (std::find(modes.begin(), modes.end(), 't') == modes.end() && state)
             modes.push_back('t');
         else if (!state)
-            modes.erase(std::find(modes.begin(), modes.end(), 't'));
+        {
+            std::vector<char>::iterator tmp = std::find(modes.begin(), modes.end(), 't');
+            if (tmp != modes.end())
+            {
+                modes.erase(tmp);
+            }
+        }
     }
     void setModeK(bool state)
     {
@@ -212,7 +230,13 @@ public:
         if (std::find(modes.begin(), modes.end(), 'k') == modes.end() && state)
             modes.push_back('k');
         else if (!state)
-            modes.erase(std::find(modes.begin(), modes.end(), 'k'));
+        {
+            std::vector<char>::iterator tmp = std::find(modes.begin(), modes.end(), 'k');
+            if (tmp != modes.end())
+            {
+                modes.erase(tmp);
+            }
+        }
     }
     void modifOp(int index, int state)
     {
