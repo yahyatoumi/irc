@@ -544,7 +544,7 @@ void Server::parse(const char *buff, int i)
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
                 throw std::runtime_error("send failed");
         }
-        else if (!isNickNameValid(nickname))
+        else if (!isNickNameValid(nickname) || nickname == "bot")
         {
             std::string rpl = ERR_ERRONEUSNICKNAME(this->clients[i].getip_address(), this->clients[i].getnickname());
             if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
