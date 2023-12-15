@@ -1024,21 +1024,30 @@ void Server::pollinFDs()
             {
                 std::string lastBuff = buff;
                 memset(buff, 0, 1024);
-                std::cout << "lastbuff1 " << lastBuff << "XX" << static_cast<int>(buff[bytesRead - 1]) << "XX";
+                std::cout << "received : " << lastBuff << std::endl;
                 while (lastBuff[lastBuff.length() - 1] != '\n')
                 {
                     std::cout << "here\n";
                     bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
+                    if (bytesRead == 0)
+                    {
+                        break;
+                    }
                     std::string holder(buff);
+                    std::cout << "received : " << holder << std::endl;
                     lastBuff += holder;
                     memset(buff, 0, 1024);
                     std::cout << "lastbuff2 " << lastBuff;
+                }
+                if (bytesRead == 0)
+                {
+                    break;
                 }
                 if (lastBuff[lastBuff.length() - 1] == '\n' || lastBuff[lastBuff.length() - 1] == '\r')
                     lastBuff = lastBuff.substr(0, lastBuff.length() - 1);
                 if (lastBuff[lastBuff.length() - 1] == '\n' || lastBuff[lastBuff.length() - 1] == '\r')
                     lastBuff = lastBuff.substr(0, lastBuff.length() - 1);
-                std::cout << "Received from client " << i << ": " << lastBuff << " X " << lastBuff.length() << std::endl;
+                std::cout << "Will parse :" << lastBuff << std::endl;
                 parse(lastBuff.c_str(), i - 1);
             }
         }
