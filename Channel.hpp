@@ -148,6 +148,17 @@ public:
     void removeAClientFromChannel(int index)
     {
         this->channel_clients.erase(this->channel_clients.begin() + index);
+        this->channelOpArr.erase(this->channelOpArr.begin() + index);
+        std::cout << "operators arr size : " << this->channelOpArr.size() << std::endl;
+        for (unsigned long i = 0; i < this->channelOpArr.size(); i++){
+            std::cout << "[" << i << "] : " << this->channelOpArr[i] << std::endl;
+        }
+        if (this->channel_clients.size() == 1){
+            this->channelOpArr[0] = true;
+        }
+    }
+    void pushBackToOppArr(){
+        this->channelOpArr.push_back(0);
     }
     int addOperator(Client &client)
     {
@@ -161,7 +172,6 @@ public:
     bool isOperator(Client &client)
     {
         int i = getChannelClient(client);
-        std::cout << channelOpArr[i] << "babe\n";
         if (i >= 0)
             return this->channelOpArr[i];
         return false;

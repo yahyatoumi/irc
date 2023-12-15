@@ -217,11 +217,13 @@ void Server::removeModes(std::deque<std::string> &params, std::deque<char> &mode
     }
 }
 
-std::deque<std::string> extractModeParams(std::string &command){
+std::deque<std::string> extractModeParams(std::string &command)
+{
     std::deque<std::string> prms;
     char *holder = const_cast<char *>(command.c_str());
     char *token = strtok(holder, " ");
-    while (token){
+    while (token)
+    {
         std::cout << "token : " << token << std::endl;
         prms.push_back(token);
         token = strtok(nullptr, " ");
@@ -234,7 +236,8 @@ void Server::parseMode(std::string &command, int index)
     bool plus = true;
     int i = 0;
     std::deque<std::string> allParams = extractModeParams(command);
-    while ((unsigned long)i < allParams.size()){
+    while ((unsigned long)i < allParams.size())
+    {
         std::cout << "token [" << i << "] : " << allParams[i] << std::endl;
         i++;
     }
@@ -266,7 +269,8 @@ void Server::parseMode(std::string &command, int index)
     std::deque<char> modes;
     allParams.pop_front();
     i = 0;
-    while ((unsigned long)i < modesString.length() && !std::isalpha(modesString[i])){
+    while ((unsigned long)i < modesString.length() && !std::isalpha(modesString[i]))
+    {
         if (modesString[i] == '-')
             plus = false;
         if (modesString[i] == '+')
@@ -463,10 +467,26 @@ void Server::extractKickParams(std::vector<std::string> &kickParams, const char 
     }
 }
 
-std::string extractCommand(const char *buff){
+bool isChannelNameValide(std::string &Channelname)
+{
+    int i = 0;
+    if (Channelname[0] != '#')
+        return false;
+    while (Channelname[i])
+    {
+        if (Channelname[i] == ' ' || Channelname[i] == 7)
+            return false;
+        i++;
+    }
+    return true;
+}
+
+std::string extractCommand(const char *buff)
+{
     int i = 0;
     std::string cmd = "";
-    while (buff[i] && buff[i] != ' '){
+    while (buff[i] && buff[i] != ' ')
+    {
         cmd += buff[i];
         i++;
     }
@@ -538,10 +558,13 @@ void Server::parse(const char *buff, int i)
         }
         else
         {
-            std::string rpl = RPL_NICKCHANGE(this->clients[i].getnickname(), nickname, this->clients[i].getip_address());
+            if (this->clients[i].getEntredNick())
+            {
+                std::string rpl = RPL_NICKCHANGE(this->clients[i].getnickname(), nickname, this->clients[i].getip_address());
+                if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+                    throw std::runtime_error("send failed");
+            }
             this->clients[i].setNickName(nickname);
-            if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
-                throw std::runtime_error("send failed");
         }
     }
     else if (cmd == "USER")
@@ -697,6 +720,7 @@ void Server::parse(const char *buff, int i)
                         this->channels[channel_index].addClient(this->clients[i]);
                         std::string rpl;
                         this->channels[channel_index].removeInvitation(this->clients[i]);
+                        this->channels[channel_index].pushBackToOppArr();
 
                         std::string names = "";
                         std::vector<Client> channelClients = this->channels[this->find_channel(channelsNames[j])].getCHannelClients();
@@ -729,17 +753,25 @@ void Server::parse(const char *buff, int i)
                 }
                 else
                 {
-                    Channel channel(channelsNames[j]);
-                    this->channels.push_back(channel);
-                    this->channels[this->channels.size() - 1].addOperator(this->clients[i]);
-                    this->channels[this->channels.size() - 1].addClient(this->clients[i]);
-                    std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], this->clients[i].getip_address());
-                    send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
-                    rpl = ":" + this->clients[i].getnickname() + " MODE " + channelsNames[j] + " +ns \r\n";
-                    send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
-                    rpl = ":" + clients[i].getip_address() + " 353 " + clients[i].getnickname() + " = " + channelsNames[j] + " :@" + clients[i].getnickname() + " \r\n";
-                    send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
-                    rpl = RPL_ENDOFNAMES(this->clients[i].getip_address(), this->clients[i].getnickname(), channelsNames[j]);
+                    if (!isChannelNameValide(channelsNames[j]))
+                    {
+                        std::string rpl = ERR_BADCHANNELNAME(this->clients[i].getip_address(), this->clients[i].getnickname(), channelsNames[j]);
+                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                    }
+                    else
+                    {
+                        Channel channel(channelsNames[j]);
+                        this->channels.push_back(channel);
+                        this->channels[this->channels.size() - 1].addOperator(this->clients[i]);
+                        this->channels[this->channels.size() - 1].addClient(this->clients[i]);
+                        std::string rpl = RPL_JOIN(this->clients[i].getnickname(), this->clients[i].getUserName(), channelsNames[j], this->clients[i].getip_address());
+                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                        rpl = ":" + this->clients[i].getnickname() + " MODE " + channelsNames[j] + " +ns \r\n";
+                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                        rpl = ":" + clients[i].getip_address() + " 353 " + clients[i].getnickname() + " = " + channelsNames[j] + " :@" + clients[i].getnickname() + " \r\n";
+                        send(this->clients[i].getFd(), rpl.c_str(), rpl.size(), 0);
+                        rpl = RPL_ENDOFNAMES(this->clients[i].getip_address(), this->clients[i].getnickname(), channelsNames[j]);
+                    }
                 }
             }
         }
@@ -854,6 +886,10 @@ void Server::parse(const char *buff, int i)
                 throw std::runtime_error("send failed");
             std::cout << "herrororororo\n";
             this->channels[find_channel(kickParams[0])].removeAClientFromChannel(this->channels[find_channel(kickParams[0])].getChannelClient(this->clients[this->getClientIndexByNickname(kickParams[1])]));
+            if (this->channels[find_channel(kickParams[0])].getCHannelClients().size() == 0)
+            {
+                this->channels.erase(channels.begin() + find_channel(kickParams[0]));
+            }
         }
     }
     else if (cmd == "TOPIC")
@@ -899,12 +935,12 @@ void Server::parse(const char *buff, int i)
             std::cout << "herrororororo\n";
         }
     }
-    else if (cmd != "PONG") {
+    else if (cmd != "PONG")
+    {
         std::string rpl = ERR_UNKNOWNCOMMAND(this->clients[i].getip_address(), this->clients[i].getnickname(), cmd);
-            if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
-                throw std::runtime_error("send failed");
-            std::cout << "herrororororo\n";
-                
+        if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+            throw std::runtime_error("send failed");
+        std::cout << "herrororororo\n";
     }
 }
 
