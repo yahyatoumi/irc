@@ -9,8 +9,8 @@
 
 NAME = ircserv
 NAMB = irc_bot
-src = neww.o Channel.o Server.o Client.o
-srcb =  Bot.o 
+src = ft_irc.o Channel.o Server.o Client.o
+srcb =   Server.o  Bot.o Client.o Channel.o
 CC = c++
 CXXFLAGS =  -Wall -Wextra -Werror -std=c++98 
 RM = rm -f
@@ -20,9 +20,9 @@ all: $(NAME)
 $(NAME): $(src)  
 	
 
-$(src): Server.hpp
-$(srb): Server.hpp Bot.hpp
-bonus: all $(NAMB)
+$(src): Server.hpp Channel.hpp Client.hpp
+$(srb): Server.hpp Bot.hpp Client.hpp Channel.hpp
+bonus: $(NAMB)
 		@$(CC) $(CXXFLAGS) $(srcb)  -o $(NAMB)
 $(NAMB) : $(srcb)
 
