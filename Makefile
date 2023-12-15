@@ -9,10 +9,10 @@
 
 NAME = ircserv
 NAMB = irc_bot
-src = neww.o Channel.o Server.o
+src = neww.o Channel.o Server.o Client.o
 srcb =  Bot.o 
 CC = c++
-CXXFLAGS =  -Wall -Wextra -Werror -std=c++98 -fsanitize=address
+CXXFLAGS =  -Wall -Wextra -Werror -std=c++98 
 RM = rm -f
 
 all: $(NAME)
@@ -25,7 +25,7 @@ $(srb): Server.hpp Bot.hpp
 bonus: all $(NAMB)
 		@$(CC) $(CXXFLAGS) $(srcb)  -o $(NAMB)
 $(NAMB) : $(srcb)
-		
+
 clean:
 	@$(RM) $(src) $(srcb)
 

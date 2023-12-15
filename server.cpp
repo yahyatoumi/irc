@@ -468,10 +468,12 @@ void Server::extractKickParams(std::vector<std::string> &kickParams, const char 
     }
 }
 
-std::string extractCommand(const char *buff){
+std::string extractCommand(const char *buff)
+{
     int i = 0;
     std::string cmd = "";
-    while (buff[i] && buff[i] != ' '){
+    while (buff[i] && buff[i] != ' ')
+    {
         cmd += buff[i];
         i++;
     }
@@ -481,7 +483,7 @@ std::string extractCommand(const char *buff){
 void Server::parse(const char *buff, int i)
 {
     std::string cmd = extractCommand(buff);
-    std::cout << "command == " << cmd << std::endl;
+
     if (cmd == "bot")
     {
         this->clients[i].setNickName("bot");
@@ -749,8 +751,10 @@ void Server::parse(const char *buff, int i)
             }
         }
     }
-    else if (!std::strncmp(buff, "PRIVMSG #", 9))
+    else if (!strncmp(buff, "PRIVMSG #", 9))
     {
+        std::cout << "command == " << cmd << std::endl;
+        std::cout << "buff == " << buff << std::endl;
         char channel_holder[std::strlen(buff + 9)];
         int x = 0;
         while (buff[x + 8] && buff[x + 8] != ' ')
@@ -781,10 +785,18 @@ void Server::parse(const char *buff, int i)
 
     else if (cmd == "PRIVMSG")
     {
-        std::string comand = buff + 8;
-        size_t pos = comand.find(' ');
-        std::string name = comand.substr(0, pos);
-        std::string msg = comand.substr(pos + 1, comand.size() - name.size());
+        std::string comand;
+        size_t pos;
+        std::string name;
+        std::string msg;
+
+        comand = buff + 8;
+        pos = comand.find(' ');
+        name = comand.substr(0, pos);
+        msg = comand.substr(pos + 1, comand.size() - name.size());
+
+        std::cout << "name == " << name << std::endl;
+        std::cout << "msg == " << msg << std::endl;
         if (msg[0] == ':')
             msg = comand.substr(pos + 2, comand.size() - name.size());
         for (std::vector<Client>::iterator sender = clients.begin(); sender != clients.end(); sender++)
@@ -904,12 +916,12 @@ void Server::parse(const char *buff, int i)
             std::cout << "herrororororo\n";
         }
     }
-    else if (cmd != "PONG") {
+    else if (cmd != "PONG")
+    {
         std::string rpl = ERR_UNKNOWNCOMMAND(this->clients[i].getip_address(), this->clients[i].getnickname(), cmd);
-            if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
-                throw std::runtime_error("send failed");
-            std::cout << "herrororororo\n";
-                
+        if (send(this->clients[i].getFd(), rpl.c_str(), std::strlen(rpl.c_str()), 0) < 0)
+            throw std::runtime_error("send failed");
+        std::cout << "herrororororo\n";
     }
 }
 
@@ -951,7 +963,6 @@ void Server::pollinFDs()
             memset(buff, 0, 1024);
             ssize_t bytesRead;
             bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
-            std::cout << "bytes read " << bytesRead << " fd: " << i << std::endl;
             if (bytesRead <= 0)
             {
                 if (bytesRead == 0)
@@ -993,7 +1004,6 @@ void Server::pollinFDs()
             {
                 std::string lastBuff = buff;
                 memset(buff, 0, 1024);
-                std::cout << "lastbuff1 " << lastBuff << "XX" << static_cast<int>(buff[bytesRead - 1]) << "XX";
                 while (lastBuff[lastBuff.length() - 1] != '\n')
                 {
                     std::cout << "here\n";
@@ -1032,7 +1042,6 @@ void Server::serverPoll()
 
 Server::Server(char *port, char *password)
 {
-    std::cout << "fofofofof" << std::endl;
     this->port = std::atoi(port);
     if (this->port < 0 || this->port > 65535 || std::strlen(port) > 5)
         std::out_of_range("error: port out of range");

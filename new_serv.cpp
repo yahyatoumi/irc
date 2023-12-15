@@ -217,7 +217,6 @@ int main(int ac, char **av)
 					char buff[1024];
 					ssize_t bytesRead;
 					bytesRead = recv(fds[i].fd, buff, sizeof(buff) - 1, 0);
-					std::cout << "bytes read " << bytesRead << " fd: " << i << std::endl;
 					if (bytesRead <= 0)
 					{
 						if (bytesRead == 0)
