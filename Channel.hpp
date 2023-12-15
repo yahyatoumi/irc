@@ -68,6 +68,10 @@ public:
     void setModeT(bool state);
     void setModeK(bool state);
     void modifOp(int index, int state);
+    void pushBackToOppArr()
+    {
+        this->channelOpArr.push_back(0);
+    }
 };
 
 #endif
