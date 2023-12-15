@@ -210,3 +210,7 @@ void Channel::modifOp(int index, int state)
 {
     this->channelOpArr[index] = state;
 }
+void Channel::pushBackToOppArr()
+{
+    this->channelOpArr.push_back(0);
+}
