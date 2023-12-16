@@ -140,6 +140,7 @@ int Channel::getNumberOfClients()
 void Channel::removeAClientFromChannel(int index)
 {
     this->channel_clients.erase(this->channel_clients.begin() + index);
+    this->channelOpArr.erase(this->channelOpArr.begin() + index);
 }
 int Channel::addOperator(Client &client)
 {

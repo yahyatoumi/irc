@@ -721,7 +721,6 @@ void Server::parse(const char *buff, int i)
                         std::string rpl;
                         this->channels[channel_index].removeInvitation(this->clients[i]);
                         this->channels[channel_index].pushBackToOppArr();
-
                         std::string names = "";
                         std::vector<Client> channelClients = this->channels[this->find_channel(channelsNames[j])].getCHannelClients();
 
@@ -954,16 +953,6 @@ void Server::parse(const char *buff, int i)
     }
 }
 
-struct sockaddr_in *Server::createIPv4Address(int port)
-{
-    struct sockaddr_in *address = new sockaddr_in();
-    address->sin_port = htons(port);
-    address->sin_family = AF_INET;
-    address->sin_addr.s_addr = INADDR_ANY;
-
-    return address;
-}
-
 void Server::createNewClienFD()
 {
     socklen_t clientAddressSize = sizeof(clientAddress);
@@ -1096,16 +1085,18 @@ Server::Server(char *port, char *password)
         std::runtime_error("setsockopt() failed");
     }
 
-    struct sockaddr_in *address = createIPv4Address(this->port);
+    struct sockaddr_in address;
+    address.sin_port = htons(this->port);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(this->sockFD, (struct sockaddr *)address, sizeof *address) == 0)
+    if (bind(this->sockFD, (struct sockaddr *)&address, sizeof address) == 0)
     {
         std::cout << "Socket bound" << std::endl;
     }
     else
     {
         close(this->sockFD);
-        delete address;
         throw std::runtime_error("Bind failed xx");
     }
 
@@ -1115,7 +1106,6 @@ Server::Server(char *port, char *password)
     }
     else
     {
-        delete address;
         close(this->sockFD);
         std::runtime_error("Listen failed");
     }
