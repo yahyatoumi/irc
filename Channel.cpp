@@ -89,7 +89,6 @@ std::string Channel::getTopic()
 }
 void Channel::setTopic(std::string newTopic)
 {
-    modeT = true;
     this->topic = newTopic;
 }
 int Channel::getUserslimit()
