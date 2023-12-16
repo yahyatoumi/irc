@@ -997,6 +997,7 @@ void Server::pollinFDs()
                         {
                             std::cout << "removed from channel : " << this->channels[x].get_name() << std::endl;
                             this->channels[x].removeAClientFromChannel(index);
+                            this->channels[x].removeInvitation(this->clients[i - 1]);
                             if (!this->channels[x].getNumberOfClients())
                             {
                                 this->channels.erase(this->channels.begin() + x);
